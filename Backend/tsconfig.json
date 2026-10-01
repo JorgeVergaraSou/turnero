@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "node16",
+    "lib": ["ES2021"],
+    "outDir": "./dist",
+
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+
+    // node16 (y no "node"/node10, deprecado desde TypeScript 6): el
+    // package.json no tiene "type": "module", así que compila a CommonJS
+    // igual que antes.
+    "moduleResolution": "node16",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    // TypeScript 6 ya no incluye automáticamente todos los @types: se
+    // declaran acá (multer aporta el tipo global Express.Multer.File).
+    "types": ["node", "jest", "multer"],
+    // Sin "baseUrl" (deprecado desde TypeScript 6): "paths" se resuelve
+    // relativo a este archivo.
+    "paths": { "@/*": ["./src/*"] },
+
+    "strict": true,
+    "strictPropertyInitialization": false, // 👈 agregado
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "removeComments": true,
+    "sourceMap": true
+  },
+  // test/ se incluye para que el editor y ts-jest tipen los e2e. El
+  // "rootDir" vive en tsconfig.build.json (el único que compila a dist/),
+  // porque acá test/ quedaría fuera de src/.
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

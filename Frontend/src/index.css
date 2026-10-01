@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+/*
+ * Tokens del consultorio. Los nombres describen el mundo del producto
+ * (tinta de recetario, papel, eucalipto), no el rol técnico, así una
+ * pantalla nueva los usa sin pensar en hex.
+ */
+@theme {
+  --font-sans: "Atkinson Hyperlegible Next", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, monospace;
+
+  --color-ink: #17304f;
+  --color-ink-soft: #4a5d77;
+  --color-ink-faint: #7d8a9b;
+  --color-paper: #f5f7f6;
+  --color-sheet: #ffffff;
+  --color-line: #cfd8d4;
+  --color-line-soft: #e4eae7;
+  --color-eucalyptus: #1f6f5f;
+  --color-eucalyptus-dark: #175548;
+  --color-eucalyptus-wash: #e3efeb;
+
+  /* pantalla de sala (TV): fondo más profundo que el panel, y acentos claros
+     que se leen a distancia sobre oscuro */
+  --color-ink-deep: #0f2138;
+  --color-eucalyptus-glow: #6fd0b8;
+  --color-signal: #f5b94a;
+
+  /* estados de turno: uno por estado, usados igual en todas las pantallas */
+  --color-st-reserved: #3d5a80;
+  --color-st-reserved-wash: #e6ecf4;
+  --color-st-confirmed: #1f6f5f;
+  --color-st-confirmed-wash: #e3efeb;
+  --color-st-attention: #9a5b00;
+  --color-st-attention-wash: #fbefd9;
+  --color-st-attended: #3c6b2f;
+  --color-st-attended-wash: #e7f0e2;
+  --color-st-cancelled: #a23b2a;
+  --color-st-cancelled-wash: #f8e5e1;
+  --color-st-absent: #5f6672;
+  --color-st-absent-wash: #eceef1;
+
+  --radius-control: 6px;
+  --radius-panel: 12px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply text-ink;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-eucalyptus);
+    outline-offset: 2px;
+  }
+  /* selección bien visible: el verde pálido anterior casi no se veía sobre
+     blanco, y parecía que no se podía seleccionar (ej. el código del turno) */
+  ::selection {
+    background: var(--color-eucalyptus);
+    color: #ffffff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* números tabulares: horarios y códigos alineados en columnas */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * El comprobante de turno: bordes con muescas de talón troquelado. Único
+ * elemento "expresivo" de la app — el resto se mantiene sobrio.
+ */
+.ticket {
+  --notch: 11px;
+  background:
+    radial-gradient(circle at 0 var(--stub), transparent var(--notch), var(--color-sheet) calc(var(--notch) + 0.5px)) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% var(--stub), transparent var(--notch), var(--color-sheet) calc(var(--notch) + 0.5px)) right / 51% 100% no-repeat;
+  filter: drop-shadow(0 1px 0 var(--color-line)) drop-shadow(0 10px 24px rgb(23 48 79 / 0.1));
+}
+.ticket-perforation {
+  border-top: 2px dashed var(--color-line);
+}
+@keyframes ticket-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) rotate(-1deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ticket-enter {
+  animation: ticket-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* SweetAlert2 (confirmaciones) con la tipografía y colores del consultorio */
+.swal2-popup {
+  font-family: var(--font-sans) !important;
+  color: var(--color-ink) !important;
+  border-radius: var(--radius-panel) !important;
+}
+.swal2-title {
+  font-size: 1.35rem !important;
+  color: var(--color-ink) !important;
+}
+.swal2-styled.swal2-confirm {
+  background: var(--color-eucalyptus) !important;
+  border-radius: var(--radius-control) !important;
+}
+.swal2-styled.swal2-deny {
+  background: var(--color-st-cancelled) !important;
+  border-radius: var(--radius-control) !important;
+}
+.swal2-styled.swal2-cancel {
+  background: transparent !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--color-line) !important;
+  border-radius: var(--radius-control) !important;
+}
+.swal2-input,
+.swal2-textarea {
+  border-radius: var(--radius-control) !important;
+  font-family: var(--font-sans) !important;
+}
+
+/*
+ * Pantalla de sala: un llamado nuevo entra con un golpe de escala y el
+ * marco ámbar destella tres veces (unos 5 s) para que se note aunque nadie
+ * esté mirando la TV. Es el único movimiento de la pantalla.
+ */
+@keyframes call-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes call-blink {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0.5vmin rgb(245 185 74 / 0);
+  }
+  50% {
+    box-shadow: inset 0 0 0 0.5vmin rgb(245 185 74 / 1);
+  }
+}
+.call-fresh {
+  animation:
+    call-arrive 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    call-blink 1.7s ease-in-out 3;
+}

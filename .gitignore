@@ -1,0 +1,51 @@
+# Repositorio único: Backend + Frontend. Cada carpeta conserva además su propio .gitignore.
+
+# Documentación en Markdown (guías, resumen de avance, CLAUDE.md, README): queda solo en local
+*.md
+*.MD
+# ...salvo estos, que sí se versionan:
+!/README.md
+!Frontend/README.md
+!Backend/CLAUDE.md
+!Frontend/CLAUDE.md
+!GUIA-PANTALLA-SALA.md
+
+# Dependencias y compilados
+node_modules/
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
+# Variables de entorno (claves de la base, JWT, SMTP). Los .env.example SÍ se versionan.
+.env
+.env.*
+!.env.example
+
+# Archivos subidos por usuarios (fotos de perfil) y logs de ejecución
+Backend/uploads/
+logs/
+*.log
+
+# Tests y cobertura
+coverage/
+.nyc_output/
+
+# Herramientas de prueba en el navegador (capturas y consolas de Playwright)
+.playwright-mcp/
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.idea/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Temporales
+.tmp/
+.temp/
+*.pid

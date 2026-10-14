@@ -57,6 +57,8 @@ export enum AuditAction {
   APPOINTMENT_PUBLIC_LOOKUP = 'APPOINTMENT_PUBLIC_LOOKUP',
   /** el paciente avisó, desde el enlace del recordatorio, que va a venir */
   APPOINTMENT_PATIENT_CONFIRM = 'APPOINTMENT_PATIENT_CONFIRM',
+  /** recepción dio por avisado (o descartó) un recordatorio por WhatsApp hecho a mano */
+  WHATSAPP_REMINDER_MARK = 'WHATSAPP_REMINDER_MARK',
   // clínicos
   START_ATTENTION = 'START_ATTENTION',
   /** el médico llamó al paciente a la sala (sin contenido clínico) */

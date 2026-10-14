@@ -176,6 +176,16 @@ export class AppointmentEntity {
   @Column({ type: 'datetime', nullable: true, name: 'patient_confirmed_at' })
   patientConfirmedAt!: Date | null;
 
+  /**
+   * Avisos por WhatsApp que recepción hace a mano (enlace wa.me): cuándo los
+   * dio por avisados o descartados, uno por etapa. Reprogramar los vuelve a null.
+   */
+  @Column({ type: 'datetime', nullable: true, name: 'whatsapp1_sent_at' })
+  whatsapp1SentAt!: Date | null;
+
+  @Column({ type: 'datetime', nullable: true, name: 'whatsapp2_sent_at' })
+  whatsapp2SentAt!: Date | null;
+
   /** null = reservado por el propio paciente (público) */
   @Column({
     type: 'int',

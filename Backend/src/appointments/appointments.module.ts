@@ -8,6 +8,8 @@ import { AppointmentRemindersService } from './appointment-reminders.service';
 import { AppointmentRemindersScheduler } from './appointment-reminders.scheduler';
 import { AgendaStreamService } from './agenda-stream.service';
 import { AdminAgendaStreamController } from './agenda-stream.controller';
+import { WhatsAppRemindersService } from './whatsapp-reminders.service';
+import { WhatsAppRemindersController } from './whatsapp-reminders.controller';
 import {
   AdminAppointmentsController,
   PublicAppointmentsController,
@@ -32,6 +34,7 @@ import { PrivacyModule } from '@/privacy/privacy.module';
     PublicAppointmentsController,
     AdminAppointmentsController,
     AdminAgendaStreamController,
+    WhatsAppRemindersController,
   ],
   providers: [
     AppointmentsService,
@@ -39,6 +42,7 @@ import { PrivacyModule } from '@/privacy/privacy.module';
     AppointmentRemindersService,
     AppointmentRemindersScheduler,
     AgendaStreamService,
+    WhatsAppRemindersService,
   ],
   exports: [
     AppointmentsService,

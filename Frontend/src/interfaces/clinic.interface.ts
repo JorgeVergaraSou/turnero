@@ -517,3 +517,20 @@ export interface AttendanceConfirmation {
   /** false si el turno se canceló, ya pasó o el paciente ya llegó */
   canConfirm: boolean;
 }
+
+/** Un aviso por WhatsApp que le toca hacer a recepción (a mano, con enlace wa.me). */
+export interface WhatsAppReminder {
+  appointmentId: number;
+  /** 1 = aviso previo (24 h por defecto); 2 = último aviso (2 h por defecto) */
+  stage: 1 | 2;
+  firstName: string;
+  lastName: string;
+  date: string;
+  startTime: string;
+  /** como lo escribió el paciente */
+  phone: string;
+  /** null si el teléfono no sirve para WhatsApp */
+  whatsappUrl: string | null;
+  /** el texto que se va a mandar */
+  message: string;
+}

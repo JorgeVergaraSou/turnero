@@ -699,6 +699,8 @@ export class AppointmentsService {
           reminderSentAt: null,
           reminder2SentAt: null,
           patientConfirmedAt: null,
+          whatsapp1SentAt: null,
+          whatsapp2SentAt: null,
         });
         await manager.getRepository(AppointmentStatusHistoryEntity).insert({
           appointmentId: id,

@@ -9,6 +9,7 @@ import { ContactMismatchBadge } from '@/components/ContactMismatch';
 import { HistoryExportsNotice } from '@/components/HistoryExportParts';
 import { useAgendaStream } from '@/hooks/useAgendaStream';
 import { PatientConfirmedTag } from '@/components/PatientConfirmedTag';
+import { WhatsAppReminders } from '@/components/WhatsAppReminders';
 import {
   EXCEPTION_LABEL,
   addDays,
@@ -137,6 +138,8 @@ export function ReceptionHomePage() {
         singular="pedido de copia de historia clínica en curso"
         plural="pedidos de copia de historia clínica en curso"
       />
+
+      <WhatsAppReminders />
 
       {!view ? (
         data.error ? <ErrorNotice message={data.error} onRetry={data.reload} /> : <Spinner />

@@ -10,6 +10,7 @@ import {
   CallResult,
   AdminPrivacyNotice,
   AttendanceConfirmation,
+  WhatsAppReminder,
   PrivacyNotice,
   DisplayDevice,
   DisplayDeviceWithToken,
@@ -156,6 +157,10 @@ export const adminApi = {
 // ---------------- recepción ----------------
 
 export const receptionApi = {
+  /** avisos por WhatsApp que le tocan a recepción (se mandan a mano) */
+  whatsappReminders: () => data<WhatsAppReminder[]>(api.get('/admin/whatsapp-reminders')),
+  markWhatsappReminder: (appointmentId: number, stage: 1 | 2, outcome: 'SENT' | 'SKIPPED') =>
+    data<{ marked: boolean }>(api.post(`/admin/whatsapp-reminders/${appointmentId}/${stage}/mark`, { outcome })),
   /** todas, incluidas las desactivadas (para mostrar legajos viejos) */
   healthInsurances: () => data<HealthInsurance[]>(api.get('/admin/health-insurances')),
   searchPatients: (q: string, page = 1) =>

@@ -9,6 +9,7 @@ import {
   Appointment,
   CallResult,
   AdminPrivacyNotice,
+  AttendanceConfirmation,
   PrivacyNotice,
   DisplayDevice,
   DisplayDeviceWithToken,
@@ -48,6 +49,11 @@ const data = <T>(promise: Promise<{ data: T }>) => promise.then((res) => res.dat
 // ---------------- público (paciente sin cuenta) ----------------
 
 export const publicApi = {
+  /** enlace "confirmo que voy" del recordatorio: qué turno es */
+  attendanceInfo: (token: string) =>
+    data<AttendanceConfirmation>(api.get('/public/appointments/confirm', { params: { t: token } })),
+  confirmAttendance: (token: string) =>
+    data<AttendanceConfirmation>(api.post('/public/appointments/confirm', { t: token })),
   settings: () => data<ClinicSettings>(api.get('/public/settings')),
   specialties: () => data<Specialty[]>(api.get('/public/specialties')),
   healthInsurances: () => data<HealthInsurance[]>(api.get('/public/health-insurances')),

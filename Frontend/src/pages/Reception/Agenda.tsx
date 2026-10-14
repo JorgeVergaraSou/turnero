@@ -5,6 +5,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { adminApi, receptionApi } from '@/services';
 import { useAsync } from '@/hooks/useAsync';
 import { useAgendaStream } from '@/hooks/useAgendaStream';
+import { PatientConfirmedTag } from '@/components/PatientConfirmedTag';
 import type { Appointment, AppointmentStatus } from '@/interfaces';
 import { StaffPaths } from '@/models';
 import {
@@ -243,6 +244,7 @@ export function AgendaPage() {
                   </td>
                   <td className="px-4 py-3 align-top">
                     <StatusBadge status={a.status} />
+                    <PatientConfirmedTag appointment={a} />
                   </td>
                   <td className="px-4 py-3 align-top">
                     <div className="flex flex-wrap justify-end gap-1.5">

@@ -8,6 +8,7 @@ import { Button, ErrorNotice, PageHeader, Panel, Spinner, StatusBadge } from '@/
 import { ContactMismatchBadge } from '@/components/ContactMismatch';
 import { HistoryExportsNotice } from '@/components/HistoryExportParts';
 import { useAgendaStream } from '@/hooks/useAgendaStream';
+import { PatientConfirmedTag } from '@/components/PatientConfirmedTag';
 import {
   EXCEPTION_LABEL,
   addDays,
@@ -306,6 +307,7 @@ function AppointmentList({
             </a>
           )}
           {!actions && <StatusBadge status={a.status} />}
+          <PatientConfirmedTag appointment={a} />
           {actions && <span className="flex gap-1.5">{actions(a)}</span>}
         </li>
       ))}

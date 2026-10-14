@@ -8,6 +8,7 @@ import type { Appointment, DoctorDashboard } from '@/interfaces';
 import { StaffPaths } from '@/models';
 import { CallPatientButton } from '@/components/CallPatientButton';
 import { HistoryExportsNotice } from '@/components/HistoryExportParts';
+import { PatientConfirmedTag } from '@/components/PatientConfirmedTag';
 import { Button, EmptyState, ErrorNotice, Panel, Spinner, StatusBadge } from '@/components/ui';
 import { useClinicSettings } from '@/hooks/useClinicSettings';
 import { addDays, clinicToday, longDate, shortTime } from '@/utilities';
@@ -307,6 +308,7 @@ function AppointmentRow({
         <span className="block text-sm text-ink-soft">{a.specialty.name}</span>
       </span>
       <StatusBadge status={a.status} />
+      <PatientConfirmedTag appointment={a} />
       <span className="flex min-w-40 flex-wrap items-center justify-end gap-2 text-right">
         {canCall && a.status === 'CONFIRMADO' && <CallPatientButton appointmentId={a.id} />}
         {canAttend && a.status === 'CONFIRMADO' && (

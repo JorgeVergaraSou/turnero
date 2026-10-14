@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository } from 'typeorm';
@@ -19,6 +19,7 @@ const SETTINGS_ID = 1;
 /** Todo lo configurable (pantalla de configuración del admin). */
 export interface AdminSettings extends PublicSettings {
   reminderHoursBefore: number;
+  secondReminderHoursBefore: number;
   publicMaxPendingPerPatient: number;
   twoFactorRoles: Role[];
   callNameFormat: CallNameFormat;
@@ -95,6 +96,7 @@ export class SettingsService {
     return {
       ...(await this.getPublic()),
       reminderHoursBefore: s.reminderHoursBefore,
+      secondReminderHoursBefore: s.secondReminderHoursBefore,
       publicMaxPendingPerPatient: s.publicMaxPendingPerPatient,
       twoFactorRoles: parseRoles(s.twoFactorRoles),
       callNameFormat: s.callNameFormat,
@@ -120,6 +122,15 @@ export class SettingsService {
       const current = await this.settingsRepository.findOneByOrFail({
         id: SETTINGS_ID,
       });
+      // el segundo aviso tiene que ser más cercano al turno que el primero
+      const first = dto.reminderHoursBefore ?? current.reminderHoursBefore;
+      const second =
+        dto.secondReminderHoursBefore ?? current.secondReminderHoursBefore;
+      if (first > 0 && second > 0 && second >= first) {
+        throw new BadRequestException(
+          'El segundo aviso tiene que salir más cerca del turno que el primero.',
+        );
+      }
       const changed = (
         Object.keys(dto) as (keyof ClinicSettingsEntity)[]
       ).filter((key) => dto[key] !== undefined && dto[key] !== current[key]);

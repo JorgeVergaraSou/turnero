@@ -158,6 +158,8 @@ export interface Appointment {
   contactHealthInsuranceNumber: string | null;
   /** reserva web con datos distintos al legajo: posible DNI ajeno */
   contactMismatch: ('name' | 'phone' | 'email' | 'healthInsurance' | 'healthInsuranceNumber')[];
+  /** el paciente avisó que va a venir (distinto de "llegó", que es el estado Confirmado) */
+  patientConfirmedAt: string | null;
   cancellationReason: string | null;
   patient: Pick<Patient, 'id' | 'firstName' | 'lastName' | 'documentNumber' | 'phone' | 'email'> & {
     healthInsurance: { id: number; name: string | null } | null;
@@ -402,6 +404,8 @@ export interface ClinicSettings {
 export interface AdminClinicSettings extends ClinicSettings {
   /** horas antes del turno en que se manda el recordatorio (0 = no se mandan) */
   reminderHoursBefore: number;
+  /** horas antes del turno del segundo aviso, el que pide confirmar (0 = no se manda) */
+  secondReminderHoursBefore: number;
   /** turnos pendientes por DNI reservando por la web (0 = sin tope) */
   publicMaxPendingPerPatient: number;
   /** roles obligados a usar verificación en dos pasos */
@@ -500,4 +504,16 @@ export interface HistoryExportInput {
   requesterDocument?: string;
   requesterRelationship?: string;
   identityChecked: boolean;
+}
+
+/** Lo que ve el paciente al abrir el enlace "confirmo que voy" del recordatorio. */
+export interface AttendanceConfirmation {
+  firstName: string;
+  date: string;
+  startTime: string;
+  officeName: string;
+  /** ya avisó que viene */
+  confirmed: boolean;
+  /** false si el turno se canceló, ya pasó o el paciente ya llegó */
+  canConfirm: boolean;
 }

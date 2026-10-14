@@ -55,6 +55,15 @@ export class ClinicSettingsEntity {
   })
   reminderHoursBefore!: number;
 
+  /** horas antes del turno del segundo aviso, el de confirmación (0 = no se manda) */
+  @Column({
+    type: 'smallint',
+    unsigned: true,
+    default: 2,
+    name: 'second_reminder_hours_before',
+  })
+  secondReminderHoursBefore!: number;
+
   /** turnos pendientes (futuros) que puede tener un mismo DNI reservando
    * por la web; 0 = sin tope. Recepción no tiene este límite. */
   @Column({

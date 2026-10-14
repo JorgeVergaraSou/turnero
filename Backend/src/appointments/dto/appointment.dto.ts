@@ -90,6 +90,13 @@ export class PublicAppointmentAccessDto {
   documentNumber: string;
 }
 
+/** Enlace de confirmación del recordatorio: `<id>.<firma>` (ver appointment-confirm-token.util). */
+export class ConfirmAttendanceDto {
+  @IsString()
+  @Matches(/^\d{1,10}\.[A-Za-z0-9_-]{24}$/, { message: 'Enlace inválido.' })
+  t: string;
+}
+
 export class CancelAppointmentDto {
   @Transform(trim)
   @IsString()

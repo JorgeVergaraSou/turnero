@@ -17,6 +17,7 @@ import MyAppointmentPage from './pages/Public/MyAppointment/MyAppointment'
 // las pantallas del personal se cargan recién cuando se usan.
 const Login = lazy(() => import('./pages/Login/Login'))
 const ResetPasswordPage = lazy(() => import('./pages/Login/ResetPassword'))
+const ConfirmPage = lazy(() => import('./pages/Public/Confirm/Confirm'))
 const PrivacyPage = lazy(() => import('./pages/Public/Privacy/Privacy'))
 const DisplayPage = lazy(() => import('./pages/Display/DisplayScreen'))
 const Private = lazy(() => import('./pages/Private/Private'))
@@ -58,6 +59,7 @@ function App() {
             <Route element={<PublicLayout />}>
               <Route index element={<BookingPage />} />
               <Route path={PublicRoutes.MY_APPOINTMENT} element={<MyAppointmentPage />} />
+              <Route path={PublicRoutes.CONFIRM} element={<ConfirmPage />} />
               <Route path={PublicRoutes.PRIVACY} element={<PrivacyPage />} />
             </Route>
 

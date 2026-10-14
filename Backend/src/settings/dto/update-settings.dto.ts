@@ -65,6 +65,14 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsInt()
   @Min(0)
+  @Max(72, {
+    message: 'El segundo aviso se puede mandar hasta 72 horas antes.',
+  })
+  secondReminderHoursBefore?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
   @Max(20, { message: 'Como máximo 20 turnos pendientes por paciente.' })
   publicMaxPendingPerPatient?: number;
 

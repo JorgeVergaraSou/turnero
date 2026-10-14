@@ -3,6 +3,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import moment from 'moment-timezone';
 import {
   AppointmentEventPayload,
+  AppointmentReminderPayload,
   AppointmentEvents,
 } from '@/appointments/appointment.events';
 import { getTransporter } from '@/config/mailer';
@@ -37,7 +38,15 @@ export class AppointmentEmailListener {
   }
 
   @OnEvent(AppointmentEvents.REMINDER, { async: true })
-  onReminder(payload: AppointmentEventPayload) {
+  onReminder(payload: AppointmentReminderPayload) {
+    if (payload.stage === 2) {
+      return this.send(
+        payload,
+        'Tu turno es hoy: confirmá que venís',
+        'Tu turno es en pocas horas. Confirmá que vas a venir; si no podés asistir, cancelalo así el horario queda libre para otra persona.',
+        payload.confirmUrl,
+      );
+    }
     return this.send(
       payload,
       'Recordatorio de turno',
@@ -64,6 +73,7 @@ export class AppointmentEmailListener {
     payload: AppointmentEventPayload,
     subject: string,
     intro: string,
+    confirmUrl: string | null = null,
   ): Promise<void> {
     if (!payload.contactEmail || !process.env.MAIL_USER) {
       return;
@@ -88,6 +98,7 @@ export class AppointmentEmailListener {
             <li><b>Especialidad:</b> ${escapeHtml(payload.specialtyName)}</li>
             <li><b>Consultorio:</b> ${escapeHtml(payload.officeName)} — ${escapeHtml(payload.officeAddress)}</li>
           </ul>
+          ${confirmUrl ? `<p><a href="${escapeHtml(confirmUrl)}" style="display:inline-block;padding:10px 18px;background:#1f6f5f;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold">Confirmo que voy</a></p>` : ''}
           <p>Con tu código y tu DNI podés consultar o cancelar el turno desde la web.</p>
           ${settings.contactPhone ? `<p>Consultas: ${escapeHtml(settings.contactPhone)}</p>` : ''}
         `,

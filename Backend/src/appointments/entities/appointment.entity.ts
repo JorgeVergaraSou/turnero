@@ -164,6 +164,18 @@ export class AppointmentEntity {
   @Column({ type: 'datetime', nullable: true, name: 'reminder_sent_at' })
   reminderSentAt!: Date | null;
 
+  /** igual que reminderSentAt, para el segundo aviso (el de confirmación) */
+  @Column({ type: 'datetime', nullable: true, name: 'reminder2_sent_at' })
+  reminder2SentAt!: Date | null;
+
+  /**
+   * El paciente avisó que va a venir (enlace del recordatorio). Dato APARTE del
+   * estado: CONFIRMADO sigue significando "llegó y está en la sala". Reprogramar
+   * lo vuelve a null.
+   */
+  @Column({ type: 'datetime', nullable: true, name: 'patient_confirmed_at' })
+  patientConfirmedAt!: Date | null;
+
   /** null = reservado por el propio paciente (público) */
   @Column({
     type: 'int',

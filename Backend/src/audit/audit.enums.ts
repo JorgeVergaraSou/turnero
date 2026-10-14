@@ -55,6 +55,8 @@ export enum AuditAction {
   APPOINTMENT_RESCHEDULE = 'APPOINTMENT_RESCHEDULE',
   APPOINTMENT_NO_SHOW = 'APPOINTMENT_NO_SHOW',
   APPOINTMENT_PUBLIC_LOOKUP = 'APPOINTMENT_PUBLIC_LOOKUP',
+  /** el paciente avisó, desde el enlace del recordatorio, que va a venir */
+  APPOINTMENT_PATIENT_CONFIRM = 'APPOINTMENT_PATIENT_CONFIRM',
   // clínicos
   START_ATTENTION = 'START_ATTENTION',
   /** el médico llamó al paciente a la sala (sin contenido clínico) */

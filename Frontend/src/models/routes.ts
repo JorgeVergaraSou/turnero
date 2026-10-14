@@ -5,6 +5,8 @@ export const PublicRoutes = {
     RESET_PASSWORD: 'reset-password',
     // consultar / cancelar un turno con código + DNI (paciente sin cuenta)
     MY_APPOINTMENT: 'mi-turno',
+    // "confirmo que voy": enlace del recordatorio, /confirmar?t=<id>.<firma> (el backend lo arma con FRONTEND_URL)
+    CONFIRM: 'confirmar',
     // política de privacidad vigente (texto público)
     PRIVACY: 'privacidad',
     // pantalla de la TV de la sala de espera (autenticada con token de pantalla, no con usuario)

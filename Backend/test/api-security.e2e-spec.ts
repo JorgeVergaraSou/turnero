@@ -40,6 +40,8 @@ interface RouteInfo {
   isPublic: boolean;
   /** autenticada con token de pantalla, no con sesión de usuario */
   isDeviceAuth: boolean;
+  /** stream de eventos (SSE): la respuesta no termina nunca */
+  isSse: boolean;
   roles?: Role[];
   permissions?: Permission[];
 }
@@ -73,6 +75,7 @@ function discoverRoutes(app: INestApplication): RouteInfo[] {
           method,
           path: `${API}/${[base, clean(path)].filter(Boolean).join('/')}`,
           isDeviceAuth: meta<boolean>(DEVICE_AUTH_KEY) === true,
+          isSse: Reflect.getMetadata('__sse__', handler) === true,
           isPublic:
             meta<boolean>(IS_PUBLIC_KEY) === true &&
             meta<boolean>(DEVICE_AUTH_KEY) !== true,
@@ -103,6 +106,28 @@ function expectedAccess(
     return roleHasPermissions(role, route.permissions) ? 'allow' : 'deny';
   }
   return 'undeclared';
+}
+
+/** Para endpoints SSE: si abrió (200) se corta; si no, se lee el error JSON como siempre. */
+function readSseStatus(
+  res: any,
+  done: (error: Error | null, body: any) => void,
+) {
+  if (res.statusCode === 200) {
+    res.destroy();
+    done(null, {});
+    return;
+  }
+  let raw = '';
+  res.setEncoding('utf8');
+  res.on('data', (chunk: string) => (raw += chunk));
+  res.on('end', () => {
+    try {
+      done(null, JSON.parse(raw));
+    } catch {
+      done(null, {});
+    }
+  });
 }
 
 /** 1x1 PNG real */
@@ -181,6 +206,7 @@ describe('Seguridad de toda la API (e2e)', () => {
           'GET /api/public/professionals',
           'GET /api/public/privacy-notice',
           'GET /api/public/professionals/:id/availability',
+          'GET /api/public/appointments/confirm',
           'GET /api/public/settings',
           'GET /api/public/specialties',
           'POST /api/auth/2fa/enable',
@@ -191,6 +217,7 @@ describe('Seguridad de toda la API (e2e)', () => {
           'POST /api/auth/resetPassword',
           'POST /api/public/appointments',
           'POST /api/public/appointments/cancel',
+          'POST /api/public/appointments/confirm',
           'POST /api/public/appointments/lookup',
         ].sort(),
       );
@@ -231,6 +258,8 @@ describe('Seguridad de toda la API (e2e)', () => {
           clearRateLimits();
           let req = request(server)[route.method](url);
           if (identity.token) req = req.set(auth(identity.token));
+          // un stream que SÍ deja pasar no termina nunca: con ver el 200 alcanza
+          if (route.isSse) req = req.buffer(false).parse(readSseStatus);
           const res =
             route.method === 'get' || route.method === 'delete'
               ? await req

@@ -63,6 +63,14 @@ export interface AppointmentEventPayload {
   officeAddress: string;
 }
 
+/** Recordatorio: los datos del turno más la etapa y el enlace para confirmar. */
+export interface AppointmentReminderPayload extends AppointmentEventPayload {
+  /** 1 = primer aviso (datos del turno); 2 = último aviso, pide confirmar */
+  stage: 1 | 2;
+  /** enlace "confirmo que voy" (null si no hay FRONTEND_URL) */
+  confirmUrl: string | null;
+}
+
 /** Arma el payload desde un turno con sus relaciones cargadas (paciente,
  * profesional + usuario, especialidad, consultorio). */
 export function toAppointmentEventPayload(

@@ -49,6 +49,7 @@ const ACTION_LABEL: Record<string, string> = {
   APPOINTMENT_RESCHEDULE: 'Reprogramó un turno',
   APPOINTMENT_NO_SHOW: 'Marcó ausente',
   APPOINTMENT_PUBLIC_LOOKUP: 'Consultó un turno con código y DNI',
+  APPOINTMENT_PATIENT_CONFIRM: 'El paciente confirmó que va a venir',
   START_ATTENTION: 'Inició una atención',
   CALL_PATIENT: 'Llamó a un paciente a la sala',
   DISPLAY_CREATE: 'Creó una pantalla de sala',

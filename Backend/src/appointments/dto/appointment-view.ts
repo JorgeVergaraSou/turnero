@@ -43,6 +43,8 @@ export function toAppointmentView(a: AppointmentEntity) {
             patient: a.patient,
           })
         : [],
+    /** el paciente avisó que va a venir (distinto de "llegó", que es el estado CONFIRMADO) */
+    patientConfirmedAt: a.patientConfirmedAt,
     cancellationReason: a.cancellationReason,
     createdAt: a.createdAt,
     patient: a.patient && {

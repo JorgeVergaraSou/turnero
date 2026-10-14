@@ -15,6 +15,7 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AppointmentsService } from './appointments.service';
 import {
   CancelAppointmentDto,
+  ConfirmAttendanceDto,
   CreateAdminAppointmentDto,
   CreatePublicAppointmentDto,
   ListAppointmentsQueryDto,
@@ -73,6 +74,25 @@ export class PublicAppointmentsController {
     @CurrentActor() actor: Actor,
   ) {
     return this.appointmentsService.lookupPublic(dto, actor);
+  }
+
+  /** Lo que ve el paciente al abrir el enlace "confirmo que voy" del recordatorio. */
+  @Public()
+  @Throttle({ default: { limit: 30, ttl: 600000 } })
+  @Get('appointments/confirm')
+  getConfirmation(@Query('t') token: string) {
+    return this.appointmentsService.getAttendanceConfirmation(token);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 600000 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('appointments/confirm')
+  confirmAttendance(
+    @Body() dto: ConfirmAttendanceDto,
+    @CurrentActor() actor: Actor,
+  ) {
+    return this.appointmentsService.confirmAttendance(dto.t, actor);
   }
 
   @Public()

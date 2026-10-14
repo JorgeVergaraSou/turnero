@@ -33,6 +33,7 @@ function SettingsForm({ initial }: { initial: AdminClinicSettings }) {
     bookingHorizonDays: String(initial.bookingHorizonDays),
     publicCancelMinHours: String(initial.publicCancelMinHours),
     reminderHoursBefore: String(initial.reminderHoursBefore),
+    secondReminderHoursBefore: String(initial.secondReminderHoursBefore),
     publicMaxPendingPerPatient: String(initial.publicMaxPendingPerPatient),
     callsEnabled: initial.callsEnabled,
     callNameFormat: initial.callNameFormat as string,
@@ -68,6 +69,7 @@ function SettingsForm({ initial }: { initial: AdminClinicSettings }) {
         bookingHorizonDays: Number(form.bookingHorizonDays),
         publicCancelMinHours: Number(form.publicCancelMinHours),
         reminderHoursBefore: Number(form.reminderHoursBefore),
+        secondReminderHoursBefore: Number(form.secondReminderHoursBefore),
         publicMaxPendingPerPatient: Number(form.publicMaxPendingPerPatient),
         callsEnabled: form.callsEnabled,
         callNameFormat: form.callNameFormat as CallNameFormat,
@@ -200,8 +202,12 @@ function SettingsForm({ initial }: { initial: AdminClinicSettings }) {
 
         <Panel className="grid gap-4 p-6">
           <h2 className="text-lg font-bold">Recordatorios</h2>
+          <p className="text-sm text-ink-soft">
+            Cada turno recibe hasta dos avisos. El segundo incluye un botón para que el paciente confirme que va a venir
+            (eso se ve en la agenda como «Confirmó que viene» y no es lo mismo que «llegó»: la llegada la marca recepción).
+          </p>
           <TextInput
-            label="Mandar el recordatorio (horas antes del turno)"
+            label="Primer aviso (horas antes del turno)"
             type="number"
             min={0}
             max={72}
@@ -209,7 +215,18 @@ function SettingsForm({ initial }: { initial: AdminClinicSettings }) {
             value={form.reminderHoursBefore}
             onChange={set('reminderHoursBefore')}
             wrapperClassName="sm:max-w-xs"
-            hint="0 = no se mandan. Llega por mail a los pacientes que dejaron email. A quien reserva dentro de ese plazo no se le manda: ya recibió la confirmación."
+            hint="0 = no se manda. Llega por mail a los pacientes que dejaron email. A quien reserva dentro de ese plazo no se le manda: ya recibió la confirmación."
+          />
+          <TextInput
+            label="Segundo aviso, el que pide confirmar (horas antes del turno)"
+            type="number"
+            min={0}
+            max={72}
+            required
+            value={form.secondReminderHoursBefore}
+            onChange={set('secondReminderHoursBefore')}
+            wrapperClassName="sm:max-w-xs"
+            hint="0 = no se manda. Tiene que ser menor que el primero. No sale si el paciente ya confirmó o ya llegó."
           />
         </Panel>
 

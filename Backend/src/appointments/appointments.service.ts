@@ -39,6 +39,10 @@ import {
   toAppointmentEventPayload,
 } from './appointment.events';
 import { generateAppointmentCode } from './appointment-code.util';
+import {
+  parseConfirmToken,
+  verifyConfirmToken,
+} from './appointment-confirm-token.util';
 import { contactMismatch } from './contact-mismatch.util';
 import { AvailabilityService } from './availability.service';
 import { PatientEntity } from '@/patients/entities/patient.entity';
@@ -392,6 +396,86 @@ export class AppointmentsService {
     return toPublicAppointmentView(appointment);
   }
 
+  // ------------------------------------------------------------------
+  // "Confirmo que voy": enlace del recordatorio
+  // ------------------------------------------------------------------
+
+  /** Qué ve el paciente al abrir el enlace: lo mínimo, sin profesional ni especialidad. */
+  async getAttendanceConfirmation(token: string) {
+    return this.toConfirmationView(await this.findByConfirmToken(token));
+  }
+
+  /**
+   * El paciente avisa que va a venir. Queda como dato APARTE del estado del
+   * turno (CONFIRMADO sigue significando "llegó"): recepción y el médico lo ven,
+   * pero nada cambia en la sala de espera ni en los llamados. Idempotente.
+   */
+  async confirmAttendance(token: string, actor: Actor) {
+    const found = await this.findByConfirmToken(token);
+    if (!this.canConfirmAttendance(found)) {
+      throw new ConflictException('Este turno ya no admite confirmación.');
+    }
+    const claim = await this.appointmentRepository
+      .createQueryBuilder()
+      .update(AppointmentEntity)
+      .set({ patientConfirmedAt: () => 'CURRENT_TIMESTAMP' })
+      .where('id = :id', { id: found.id })
+      .andWhere('patient_confirmed_at IS NULL')
+      .execute();
+    if (claim.affected === 1) {
+      await this.auditService.record({
+        actor,
+        action: AuditAction.APPOINTMENT_PATIENT_CONFIRM,
+        resourceType: 'appointment',
+        resourceId: found.id,
+        patientId: found.patientId,
+      });
+      this.notifyAgendaChanged(found);
+    }
+    return this.toConfirmationView(await this.findEntity(found.id));
+  }
+
+  private canConfirmAttendance(a: AppointmentEntity): boolean {
+    return (
+      PENDING_STATUSES.includes(a.status) &&
+      a.status !== AppointmentStatus.CONFIRMADO &&
+      !isPast(a.date, a.endTime)
+    );
+  }
+
+  private toConfirmationView(a: AppointmentEntity) {
+    return {
+      firstName: a.contactFirstName,
+      date: a.date,
+      startTime: a.startTime,
+      officeName: a.office.name,
+      confirmed: a.patientConfirmedAt !== null,
+      // ya llegó, se canceló, ya pasó…: el enlace deja de servir
+      canConfirm: this.canConfirmAttendance(a),
+    };
+  }
+
+  /**
+   * Mismo 404 genérico si el enlace está mal formado, el turno no existe o la
+   * firma no coincide: la respuesta no revela qué ids de turno existen.
+   */
+  private async findByConfirmToken(token: string): Promise<AppointmentEntity> {
+    const parsed = parseConfirmToken(token);
+    const appointment = parsed
+      ? await this.viewQuery()
+          .where('appointment.id = :id', { id: parsed.appointmentId })
+          .getOne()
+      : null;
+    if (
+      !parsed ||
+      !appointment ||
+      !verifyConfirmToken(appointment.id, appointment.code, parsed.signature)
+    ) {
+      throw new NotFoundException('El enlace no es válido.');
+    }
+    return appointment;
+  }
+
   /**
    * Mismo 404 genérico si el código no existe o si el DNI no coincide: la
    * respuesta no debe revelar que un código es válido. Los intentos
@@ -613,6 +697,8 @@ export class AppointmentsService {
           status: AppointmentStatus.RESERVADO,
           // nueva fecha/hora: corresponde un recordatorio nuevo
           reminderSentAt: null,
+          reminder2SentAt: null,
+          patientConfirmedAt: null,
         });
         await manager.getRepository(AppointmentStatusHistoryEntity).insert({
           appointmentId: id,

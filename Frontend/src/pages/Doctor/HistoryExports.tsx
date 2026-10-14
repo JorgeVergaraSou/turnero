@@ -200,7 +200,7 @@ function IssueModal({
           />
           <span>
             <span className="font-medium">
-              Verifiqué la identidad de {item.requesterType === 'TITULAR' ? 'el paciente' : item.requesterName}
+              Verifiqué la identidad {item.requesterType === 'TITULAR' ? 'del paciente' : `de ${item.requesterName}`}
             </span>
             <span className="block text-sm text-ink-soft">
               {item.requesterType === 'TITULAR'

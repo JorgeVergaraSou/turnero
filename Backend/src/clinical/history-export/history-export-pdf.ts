@@ -172,7 +172,12 @@ function render(doc: PDFKit.PDFDocument, input: HistoryPdfInput) {
 
   // --- consultas ---
   input.consultations.forEach((c, index) => {
-    doc.addPage();
+    // la primera va en hoja nueva (después de la portada); las demás siguen donde quedó la anterior
+    if (index === 0) doc.addPage();
+    else {
+      ensureSpace(260);
+      doc.moveDown(1.5);
+    }
     doc
       .font('Helvetica-Bold')
       .fontSize(13)

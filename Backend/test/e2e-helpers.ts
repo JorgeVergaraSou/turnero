@@ -120,3 +120,15 @@ export async function createUserAndLogin(
 }
 
 export const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
+
+/**
+ * Versión vigente del aviso de privacidad. La reserva pública exige aceptarla;
+ * como los tests de privacidad publican versiones nuevas (y no se pueden
+ * borrar), cada spec la lee en lugar de suponer "1".
+ */
+export async function currentPrivacyVersion(server: unknown): Promise<number> {
+  const res = await request(server as never)
+    .get(`${API}/public/privacy-notice`)
+    .expect(200);
+  return res.body.version as number;
+}

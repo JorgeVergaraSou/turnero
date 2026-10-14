@@ -47,6 +47,8 @@ import { findSlot } from '@/scheduling/availability.calculator';
 import { MAX_AVAILABILITY_RANGE_DAYS } from '@/scheduling/scheduling.enums';
 import { AuditService } from '@/audit/audit.service';
 import { SettingsService } from '@/settings/settings.service';
+import { PrivacyService } from '@/privacy/privacy.service';
+import { ConsentChannel } from '@/privacy/entities/privacy-consent.entity';
 import { AuditAction, AuditResult } from '@/audit/audit.enums';
 import { Actor } from '@/common/interfaces/actor.interface';
 import {
@@ -85,6 +87,12 @@ interface BookingRequest {
     manager: EntityManager,
     patient: PatientEntity,
   ) => Promise<void>;
+  /** después de crear el turno, en la MISMA transacción (ej. la constancia del consentimiento) */
+  afterInsert?: (
+    manager: EntityManager,
+    patient: PatientEntity,
+    appointmentId: number,
+  ) => Promise<void>;
 }
 
 @Injectable()
@@ -101,6 +109,7 @@ export class AppointmentsService {
     private readonly auditService: AuditService,
     private readonly eventEmitter: EventEmitter2,
     private readonly settingsService: SettingsService,
+    private readonly privacyService: PrivacyService,
   ) {}
 
   // ------------------------------------------------------------------
@@ -147,6 +156,11 @@ export class AppointmentsService {
         `La reserva online está deshabilitada${settings.contactPhone ? `: pedí tu turno al ${settings.contactPhone}` : '. Comunicate con el consultorio'}`,
       );
     }
+    // sin aceptar la versión vigente del aviso de privacidad no hay reserva
+    // (se verifica ANTES de tocar nada: ni turno ni paciente)
+    const notice = await this.privacyService.assertCurrentVersion(
+      dto.privacyVersion,
+    );
     let existingPatient = false;
     const appointment = await this.book({
       professionalId: dto.professionalId,
@@ -181,6 +195,14 @@ export class AppointmentsService {
       contactEmail: () => dto.patient.email ?? null,
       contactHealthInsuranceId: () => dto.patient.healthInsuranceId,
       contactHealthInsuranceNumber: () => memberNumberFor(dto.patient),
+      afterInsert: (manager, patient, appointmentId) =>
+        this.privacyService.recordConsent(manager, {
+          appointmentId,
+          patientId: patient.id,
+          notice,
+          channel: ConsentChannel.PUBLICO,
+          recordedByUserId: null,
+        }),
     });
     if (existingPatient) {
       this.notifyPatientIfContactDiffers(appointment);
@@ -285,6 +307,7 @@ export class AppointmentsService {
             createdByUserId: request.actor.userId,
           });
           const id = inserted.identifiers[0].id as number;
+          await request.afterInsert?.(manager, patient, id);
 
           await manager.getRepository(AppointmentStatusHistoryEntity).insert({
             appointmentId: id,

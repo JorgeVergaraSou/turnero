@@ -1,0 +1,12 @@
+[Unit]
+Description=Respaldo diario de Turnero
+
+[Timer]
+# Todos los días a las 03:00 (hora del servidor)
+OnCalendar=*-*-* 03:00:00
+# Si el servidor estaba apagado a esa hora, corre apenas arranca
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

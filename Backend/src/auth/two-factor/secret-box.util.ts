@@ -19,10 +19,13 @@ function key(purpose: string): Buffer {
   return createHash('sha256').update(`turnero:${purpose}:${base}`).digest();
 }
 
-/** 'iv.tag.cifrado' en base64url */
-export function encryptSecret(plain: string): string {
+/**
+ * 'iv.tag.cifrado' en base64url. `purpose` separa las claves: lo cifrado
+ * para un uso no se puede abrir con la clave de otro.
+ */
+export function sealText(purpose: string, plain: string): string {
   const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', key('totp'), iv);
+  const cipher = createCipheriv('aes-256-gcm', key(purpose), iv);
   const encrypted = Buffer.concat([
     cipher.update(plain, 'utf8'),
     cipher.final(),
@@ -32,16 +35,20 @@ export function encryptSecret(plain: string): string {
     .join('.');
 }
 
-export function decryptSecret(boxed: string): string {
+export function openText(purpose: string, boxed: string): string {
   const [iv, tag, encrypted] = boxed
     .split('.')
     .map((p) => Buffer.from(p, 'base64url'));
-  const decipher = createDecipheriv('aes-256-gcm', key('totp'), iv);
+  const decipher = createDecipheriv('aes-256-gcm', key(purpose), iv);
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString(
     'utf8',
   );
 }
+
+/** Secreto de la verificación en dos pasos (propósito 'totp'). */
+export const encryptSecret = (plain: string): string => sealText('totp', plain);
+export const decryptSecret = (boxed: string): string => openText('totp', boxed);
 
 /**
  * Huella de un código de recuperación: HMAC con una clave del servidor

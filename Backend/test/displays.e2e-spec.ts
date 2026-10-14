@@ -215,6 +215,7 @@ describe('Pantallas de sala: token y stream SSE (e2e)', () => {
         'id',
         'lastSeenAt',
         'name',
+        'tokenRecoverable',
       ]);
       expect(JSON.stringify(list.body)).not.toContain(device.token);
 
@@ -280,6 +281,113 @@ describe('Pantallas de sala: token y stream SSE (e2e)', () => {
         AuditAction.DISPLAY_TOKEN_ROTATE,
       ]);
       expect(JSON.stringify(logs)).not.toMatch(/dsp_/);
+    });
+  });
+
+  describe('volver a ver el token de una pantalla', () => {
+    const reveal = (id: number, token = admin.token) =>
+      request(server)
+        .get(`${API}/admin/display-devices/${id}/token`)
+        .set(auth(token));
+
+    it('devuelve el mismo token que se mostró al crear, y con él la pantalla se conecta', async () => {
+      const device = await createDevice();
+      const res = await reveal(device.id).expect(200);
+      expect(res.body).toEqual({ token: device.token });
+      expect(res.headers['cache-control']).toMatch(/no-store/);
+      expect((await connect(res.body.token)).status).toBe(200);
+    });
+
+    it('en la base el token está cifrado (nunca en claro) y el listado dice si es recuperable', async () => {
+      const device = await createDevice();
+      const [row] = await dataSource.query(
+        'SELECT token_encrypted FROM display_devices WHERE id = ?',
+        [device.id],
+      );
+      expect(row.token_encrypted).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/);
+      expect(row.token_encrypted).not.toContain(device.token);
+      const list = await request(server)
+        .get(`${API}/admin/display-devices`)
+        .set(auth(admin.token))
+        .expect(200);
+      expect(
+        list.body.find((d: any) => d.id === device.id).tokenRecoverable,
+      ).toBe(true);
+      expect(JSON.stringify(list.body)).not.toContain(device.token);
+    });
+
+    it('RECEPCIONISTA y MEDICO reciben 403, sin sesión 401, y un id inexistente 404', async () => {
+      const device = await createDevice();
+      for (const token of [reception.token, clinic.doctor.token]) {
+        await reveal(device.id, token).expect(403);
+      }
+      await request(server)
+        .get(`${API}/admin/display-devices/${device.id}/token`)
+        .expect(401);
+      await reveal(999999999).expect(404);
+    });
+
+    it('cada vez que se ve queda auditado, sin el token', async () => {
+      const device = await createDevice();
+      await reveal(device.id).expect(200);
+      const logs = await dataSource.getRepository(AuditLogEntity).find({
+        where: {
+          action: AuditAction.DISPLAY_TOKEN_VIEW,
+          resourceId: String(device.id),
+        },
+      });
+      expect(logs).toHaveLength(1);
+      expect(logs[0].actorUserId).toBe(admin.userId);
+      expect(JSON.stringify(logs)).not.toMatch(/dsp_/);
+    });
+
+    it('una pantalla creada antes (sin token guardado) da 409; cambiarle el token la hace recuperable', async () => {
+      const device = await createDevice();
+      await dataSource.query(
+        'UPDATE display_devices SET token_encrypted = NULL WHERE id = ?',
+        [device.id],
+      );
+      const before = await request(server)
+        .get(`${API}/admin/display-devices`)
+        .set(auth(admin.token))
+        .expect(200);
+      expect(
+        before.body.find((d: any) => d.id === device.id).tokenRecoverable,
+      ).toBe(false);
+      const res = await reveal(device.id).expect(409);
+      expect(res.body.message).toMatch(/Cambialo por uno nuevo/);
+
+      const rotated = await request(server)
+        .post(`${API}/admin/display-devices/${device.id}/rotate-token`)
+        .set(auth(admin.token))
+        .expect(200);
+      expect((await reveal(device.id).expect(200)).body.token).toBe(
+        rotated.body.token,
+      );
+    });
+
+    it('tras cambiar el token, ver el token devuelve el nuevo y el anterior ya no conecta', async () => {
+      const device = await createDevice();
+      const rotated = await request(server)
+        .post(`${API}/admin/display-devices/${device.id}/rotate-token`)
+        .set(auth(admin.token))
+        .expect(200);
+      const shown = (await reveal(device.id).expect(200)).body.token;
+      expect(shown).toBe(rotated.body.token);
+      expect(shown).not.toBe(device.token);
+      expect((await connect(device.token)).status).toBe(401);
+      expect((await connect(shown)).status).toBe(200);
+    });
+
+    it('si cambia la clave de cifrado del servidor, el token ya no se puede abrir (409) pero la pantalla sigue conectándose con él', async () => {
+      const device = await createDevice();
+      // un cifrado hecho con otra clave: no se puede abrir con la actual
+      await dataSource.query(
+        'UPDATE display_devices SET token_encrypted = ? WHERE id = ?',
+        ['AAAAAAAAAAAAAAAA.AAAAAAAAAAAAAAAAAAAAAA.AAAA', device.id],
+      );
+      await reveal(device.id).expect(409);
+      expect((await connect(device.token)).status).toBe(200);
     });
   });
 

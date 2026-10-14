@@ -1,0 +1,10 @@
+[Unit]
+Description=Chequeo diario de que haya un respaldo reciente
+
+[Timer]
+# Seis horas después del respaldo: si el de las 03:00 no corrió o falló, avisa
+OnCalendar=*-*-* 09:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

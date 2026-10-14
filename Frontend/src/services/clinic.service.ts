@@ -8,6 +8,8 @@ import { api } from '@/api/axios';
 import {
   Appointment,
   CallResult,
+  AdminPrivacyNotice,
+  PrivacyNotice,
   DisplayDevice,
   DisplayDeviceWithToken,
   AuditLogItem,
@@ -18,6 +20,11 @@ import {
   AppointmentStatus,
   Consultation,
   ConsultationUpdate,
+  HistoryExport,
+  HistoryExportScope,
+  HistoryExportCandidate,
+  HistoryExportInput,
+  HistoryExportSummary,
   DoctorDashboard,
   DoctorProfile,
   EligibleUser,
@@ -56,7 +63,10 @@ export const publicApi = {
     date: string;
     startTime: string;
     patient: PatientInput;
+    /** versión del aviso de privacidad que la persona aceptó (obligatoria) */
+    privacyVersion: number;
   }) => data<PublicAppointment>(api.post('/public/appointments', body)),
+  privacyNotice: () => data<PrivacyNotice>(api.get('/public/privacy-notice')),
   lookup: (code: string, documentNumber: string) =>
     data<PublicAppointment>(api.post('/public/appointments/lookup', { code, documentNumber })),
   cancel: (code: string, documentNumber: string) =>
@@ -118,11 +128,17 @@ export const adminApi = {
   settings: () => data<AdminClinicSettings>(api.get('/admin/settings')),
   updateSettings: (body: Partial<AdminClinicSettings>) =>
     data<AdminClinicSettings>(api.patch('/admin/settings', body)),
+  privacyNotices: () => data<AdminPrivacyNotice[]>(api.get('/admin/privacy-notices')),
+  publishPrivacyNotice: (body: { summary: string; policy: string; isDraft: boolean }) =>
+    data<PrivacyNotice>(api.post('/admin/privacy-notices', body)),
   displayDevices: () => data<DisplayDevice[]>(api.get('/admin/display-devices')),
   createDisplayDevice: (name: string) =>
     data<DisplayDeviceWithToken>(api.post('/admin/display-devices', { name })),
   updateDisplayDevice: (id: number, body: { name?: string; active?: boolean }) =>
     data<DisplayDevice>(api.patch(`/admin/display-devices/${id}`, body)),
+  /** vuelve a mostrar el token de una pantalla (queda auditado) */
+  displayDeviceToken: (id: number) =>
+    data<{ token: string }>(api.get(`/admin/display-devices/${id}/token`)),
   rotateDisplayDeviceToken: (id: number) =>
     data<DisplayDeviceWithToken>(api.post(`/admin/display-devices/${id}/rotate-token`)),
   auditLogs: (params: AuditQuery) =>
@@ -166,6 +182,22 @@ export const receptionApi = {
     data<Appointment>(api.patch(`/admin/appointments/${id}/reschedule`, body)),
 };
 
+// ---------------- copia de la historia clínica: recepción y administración ----------------
+
+export const historyExportApi = {
+  list: (scope: HistoryExportScope) =>
+    data<HistoryExport[]>(api.get('/admin/history-exports', { params: { scope } })),
+  summary: () => data<HistoryExportSummary>(api.get('/admin/history-exports/summary')),
+  /** médicos que atendieron al paciente (los únicos que pueden emitir su copia) */
+  candidates: (patientId: number) =>
+    data<HistoryExportCandidate[]>(api.get('/admin/history-exports/candidates', { params: { patientId } })),
+  create: (body: HistoryExportInput) => data<HistoryExport>(api.post('/admin/history-exports', body)),
+  cancel: (id: number, reason: string) =>
+    data<HistoryExport>(api.post(`/admin/history-exports/${id}/cancel`, { reason })),
+  reassign: (id: number, professionalId: number) =>
+    data<HistoryExport>(api.patch(`/admin/history-exports/${id}/reassign`, { professionalId })),
+};
+
 // ---------------- panel médico ----------------
 
 export const doctorApi = {
@@ -195,4 +227,20 @@ export const doctorApi = {
   finalize: (id: number) => data<Consultation>(api.post(`/doctor/consultations/${id}/finalize`)),
   amend: (id: number, body: { content: string; reason: string }) =>
     data<Consultation>(api.post(`/doctor/consultations/${id}/amendments`, body)),
+
+  // copias de la historia clínica pedidas por los pacientes
+  historyExports: (scope: HistoryExportScope) =>
+    data<HistoryExport[]>(api.get('/doctor/history-exports', { params: { scope } })),
+  historyExportSummary: () => data<HistoryExportSummary>(api.get('/doctor/history-exports/summary')),
+  /** genera el PDF (queda registrada la emisión); no se guarda en el servidor */
+  issueHistoryExport: async (id: number) => {
+    const res = await api.post(
+      `/doctor/history-exports/${id}/issue`,
+      { identityConfirmed: true },
+      { responseType: 'blob' },
+    );
+    return res.data as Blob;
+  },
+  deliverHistoryExport: (id: number) =>
+    data<HistoryExport>(api.post(`/doctor/history-exports/${id}/deliver`)),
 };

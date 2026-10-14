@@ -26,7 +26,7 @@ La pantalla no es un usuario del sistema: se conecta con un **token** propio (un
 1. Entrá al sistema como administrador.
 2. Andá a **Administración → Pantallas de sala**.
 3. Tocá **Nueva pantalla**, escribí un nombre que la identifique (por ejemplo «TV sala de espera») y **Crear pantalla**.
-4. Aparece el **token** y un **enlace para abrir en el televisor**. **Copialos ahora: por seguridad no se vuelven a mostrar.** Si los perdés, se genera uno nuevo con **Cambiar token** (el anterior deja de funcionar).
+4. Aparece el **token** y un **enlace para abrir en el televisor**. Copiá el enlace. Si cerrás la ventana sin copiarlo, no pasa nada: **Ver enlace**, en la lista de pantallas, lo vuelve a mostrar cuando quieras.
 
 ### 2. Abrir la pantalla en el televisor
 
@@ -41,14 +41,30 @@ https://tu-consultorio.com/pantalla#token=dsp_...
 
 ### 3. Activar el sonido
 
-El navegador no deja sonar nada hasta que alguien toca la página. Tocá el botón amarillo **Activar sonido** (arriba a la derecha): confirma con un timbre y la frase «Sonido activado.».
+El navegador no deja sonar nada hasta que alguien toca la página: es una regla de seguridad de todos los navegadores y ninguna página puede saltársela. La pantalla hace lo posible para que no tengas que preocuparte:
 
-- Después queda como «Sonido activo». Tocarlo otra vez silencia.
+1. **Se activa sola** al abrirla, si el navegador ya lo permite (ver [Sonido automático](#sonido-automático-sin-tocar-nada)). En ese caso no habla para confirmar: simplemente muestra «Sonido activo».
+2. Si no lo permite, aparece el botón amarillo **Activar sonido** (arriba a la derecha).
+3. **Cualquier clic, toque o tecla** en la página también lo activa (sirve el control remoto del televisor). Al activarlo así confirma con un timbre y la frase «Sonido activado.».
+
+- Una vez activo queda como «Sonido activo». Tocarlo silencia, y si lo silenciás vos, ya no se vuelve a activar solo hasta que toques **Activar sonido**.
+- Si el navegador bloquea la voz con la pantalla en uso, el botón **Activar sonido** vuelve a aparecer solo.
 - Si el televisor no tiene voz en español, aparece un aviso amarillo durante 30 segundos. Ver [Voces](#voces-en-español).
 
 ### 4. Probar
 
 Pedile a un médico que llame a un paciente de prueba. Tiene que aparecer el nombre, sonar el timbre y decirse dos veces.
+
+## Sonido automático (sin tocar nada)
+
+Para que el sonido arranque solo cada vez que se abre la pantalla, hay que **permitirlo en el navegador**; la página no puede hacerlo por su cuenta:
+
+- **Firefox:** Configuración → Privacidad y seguridad → Permisos → **Reproducción automática** → **Configuración…** → agregá la dirección del sistema (por ejemplo `http://localhost:5173`) y elegí **Permitir audio y video**.
+- **Chrome o Edge:** abrilo con la opción `--autoplay-policy=no-user-gesture-required` (ver el modo quiosco, más abajo).
+
+Sin eso, la pantalla funciona igual: alcanza con un clic, un toque o una tecla en cualquier parte, o con el botón **Activar sonido**.
+
+> La activación automática se probó en Chrome de escritorio (con y sin permiso de sonido). **No se probó en Firefox ni en un televisor.**
 
 ## Dejarla funcionando sola (modo quiosco)
 
@@ -96,7 +112,8 @@ Los cambios llegan solos a las pantallas conectadas, sin recargar.
 
 En **Administración → Pantallas de sala**:
 
-- **Cambiar token:** si se perdió o alguien lo vio. El anterior deja de funcionar al instante y la pantalla conectada se corta; hay que cargar el nuevo.
+- **Ver enlace:** vuelve a mostrar el token y el enlace de una pantalla, por ejemplo para cargarla en otro navegador. Quien tenga ese enlace puede ver los llamados de la sala, así que no lo compartas; cada vez que se ve queda registrado en Auditoría. Las pantallas creadas antes de que existiera este botón muestran un aviso en vez del botón: se les cambia el token una vez y desde ahí se puede volver a ver.
+- **Cambiar token:** si alguien que no debía lo vio (o para pasar una pantalla vieja al sistema nuevo). El anterior deja de funcionar al instante y la pantalla conectada se corta; hay que cargar el nuevo.
 - **Desactivar:** corta la pantalla y no la deja volver a conectarse. **Activar** la habilita de nuevo.
 - La lista muestra cuándo se conectó por última vez cada pantalla.
 
@@ -127,7 +144,7 @@ Si el proxy está delante del sistema, configurá también `TRUST_PROXY` (ver la
 | Aparece **«Configurar esta pantalla»** | No hay token cargado. Pegá el token o abrí el enlace con `#token=`. |
 | Dice **«Esta pantalla ya no está autorizada»** | El token se cambió o la pantalla se desactivó. Pedile al administrador un token nuevo (Pantallas de sala → Cambiar token). |
 | Arriba dice **«Reconectando…»** | Se cortó la conexión con el servidor. Reintenta sola con espera creciente. Si persiste, revisá la red y que el sistema esté encendido. |
-| Se ve el nombre pero **no suena** | Tocá **Activar sonido**. Revisá el volumen del televisor y que Chrome no esté silenciado. |
+| Se ve el nombre pero **no suena** | Tocá **Activar sonido** (o cualquier parte de la pantalla). Revisá el volumen del televisor y que Chrome no esté silenciado. |
 | Suena el timbre pero **no se oye la voz** | El equipo no tiene voz en español (ver [Voces](#voces-en-español)). |
 | Los nombres suenan raro o en otro idioma | Se está usando una voz que no es española. Instalá una voz en español. |
 | Los llamados llegan con demora | Si hay nginx u otro proxy, revisá la sección de arriba (`proxy_buffering off`). |

@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { AppStore } from '@/redux/store';
+import { Roles, StaffPaths } from '@/models';
 import { receptionApi } from '@/services';
 import { useAsync } from '@/hooks/useAsync';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -25,6 +29,7 @@ export function PatientsPage() {
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Patient | 'new' | null>(null);
   const [appointmentsOf, setAppointmentsOf] = useState<Patient | null>(null);
+  const canRequestCopy = useSelector((state: AppStore) => state.user.role) === Roles.RECEPCIONISTA;
 
   const list = useAsync(() => receptionApi.searchPatients(term, page), [term, page]);
   const totalPages = list.data ? Math.max(1, Math.ceil(list.data.total / list.data.limit)) : 1;
@@ -101,6 +106,14 @@ export function PatientsPage() {
                           <Button size="sm" variant="ghost" onClick={() => setAppointmentsOf(p)}>
                             Turnos
                           </Button>
+                          {canRequestCopy && (
+                            <Link
+                              to={StaffPaths.historyExportFor(p.id)}
+                              className="inline-flex h-8 items-center rounded-(--radius-control) px-3 text-sm font-medium hover:bg-line-soft"
+                            >
+                              Copia de historia
+                            </Link>
+                          )}
                           <Button size="sm" variant="secondary" onClick={() => setEditing(p)}>
                             Editar
                           </Button>

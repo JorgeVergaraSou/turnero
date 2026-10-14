@@ -9,6 +9,7 @@ import {
   IsString,
   Matches,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import {
@@ -54,6 +55,16 @@ export class CreatePublicAppointmentDto extends SlotSelectionDto {
   @ValidateNested()
   @Type(() => PatientDataDto)
   patient: PatientDataDto;
+
+  /**
+   * Versión del aviso de privacidad que la persona aceptó. Obligatoria: sin
+   * ella no hay reserva. El backend verifica que sea la vigente (si no, 409).
+   */
+  @IsInt({ message: 'Tenés que aceptar el aviso de privacidad para reservar.' })
+  @Min(1, {
+    message: 'Tenés que aceptar el aviso de privacidad para reservar.',
+  })
+  privacyVersion: number;
 }
 
 /** Reserva desde recepción, para un paciente ya cargado. */

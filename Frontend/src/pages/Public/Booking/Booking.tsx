@@ -7,6 +7,7 @@ import { useClinicSettings } from '@/hooks/useClinicSettings';
 import type {
   HealthInsurance,
   PatientInput,
+  PrivacyNotice,
   PublicAppointment,
   PublicProfessional,
   Slot,
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui';
 import { AppointmentTicket } from '@/components/AppointmentTicket';
 import { HealthInsuranceSelect } from '@/components/HealthInsuranceSelect';
+import { PrivacyNoticeBox } from '@/components/PrivacyNoticeBox';
 import { MEMBER_NUMBER_PATTERN, healthInsuranceWithNumber } from '@/utilities';
 import {
   addDays,
@@ -42,6 +44,14 @@ const STEPS = ['Especialidad', 'Profesional', 'Día y hora', 'Tus datos', 'Confi
 const RANGE_DAYS = 21;
 
 type Step = 0 | 1 | 2 | 3 | 4;
+
+/** Lo que devuelve useAsync para el aviso de privacidad vigente. */
+interface PrivacyState {
+  data: PrivacyNotice | null;
+  loading: boolean;
+  error: string;
+  reload: () => void;
+}
 
 /**
  * Reserva pública, sin cuenta. Mobile-first: una decisión por pantalla,
@@ -62,6 +72,7 @@ export function BookingPage() {
   const [booked, setBooked] = useState<PublicAppointment | null>(null);
   const { settings } = useClinicSettings();
   const insurances = useAsync(() => publicApi.healthInsurances(), []);
+  const privacy = useAsync(() => publicApi.privacyNotice(), []);
 
   const restart = () => {
     setStep(0);
@@ -148,6 +159,7 @@ export function BookingPage() {
             onChange={setPatient}
             onNext={() => setStep(4)}
             insurances={insurances}
+            privacy={privacy}
           />
         )}
         {step === 4 && specialty && professional && slot && (
@@ -157,6 +169,7 @@ export function BookingPage() {
             slot={slot}
             patient={patient}
             insurances={insurances.data ?? []}
+            privacy={privacy}
             onEdit={(target) => setStep(target)}
             onBooked={setBooked}
             onSlotTaken={() => {
@@ -574,11 +587,13 @@ function PatientStep({
   onChange,
   onNext,
   insurances,
+  privacy,
 }: {
   value: PatientInput;
   onChange: (p: PatientInput) => void;
   onNext: () => void;
   insurances: { data: HealthInsurance[] | null; loading: boolean; error: string; reload: () => void };
+  privacy: PrivacyState;
 }) {
   const [errors, setErrors] = useState<PatientErrors>({});
   const set = (field: keyof PatientInput) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -593,6 +608,7 @@ function PatientStep({
 
   return (
     <form onSubmit={submit} noValidate className="grid gap-4">
+      {privacy.data && <PrivacyNoticeBox notice={privacy.data} />}
       <div className="grid gap-4 sm:grid-cols-2">
         <TextInput label="Nombre" autoComplete="given-name" value={value.firstName} onChange={set('firstName')} error={errors.firstName} />
         <TextInput label="Apellido" autoComplete="family-name" value={value.lastName} onChange={set('lastName')} error={errors.lastName} />
@@ -654,6 +670,7 @@ function ConfirmStep({
   slot,
   patient,
   insurances,
+  privacy,
   onEdit,
   onBooked,
   onSlotTaken,
@@ -663,6 +680,7 @@ function ConfirmStep({
   slot: Slot;
   patient: PatientInput;
   insurances: HealthInsurance[];
+  privacy: PrivacyState;
   onEdit: (step: Step) => void;
   onBooked: (a: PublicAppointment) => void;
   onSlotTaken: () => void;
@@ -670,8 +688,13 @@ function ConfirmStep({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [taken, setTaken] = useState(false);
+  // se acepta una VERSIÓN: si el aviso cambia mientras tanto, hay que aceptar de nuevo
+  const [acceptedVersion, setAcceptedVersion] = useState<number | null>(null);
+  const notice = privacy.data;
+  const accepted = !!notice && acceptedVersion === notice.version;
 
   const confirm = async () => {
+    if (!notice || !accepted) return;
     setSending(true);
     setError('');
     try {
@@ -683,6 +706,7 @@ function ConfirmStep({
         specialtyId: specialty.id,
         date: slot.date,
         startTime: shortTime(slot.startTime),
+        privacyVersion: notice.version,
         patient: {
           ...rest,
           ...(email?.trim() && { email: email.trim() }),
@@ -692,6 +716,8 @@ function ConfirmStep({
       onBooked(booked);
     } catch (err) {
       const message = getErrorMessage(err);
+      // el aviso cambió mientras se completaba el formulario: se recarga y hay que aceptar de nuevo
+      if (/aviso de privacidad cambió/i.test(message)) privacy.reload();
       setTaken(/ya no está disponible/i.test(message));
       setError(message);
     } finally {
@@ -740,6 +766,27 @@ function ConfirmStep({
         ))}
       </dl>
 
+      <div className="mt-5">
+        {notice ? (
+          <>
+            <PrivacyNoticeBox notice={notice} />
+            <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-(--radius-control) px-1 py-1">
+              <input
+                type="checkbox"
+                className="mt-1 size-5 shrink-0 accent-eucalyptus"
+                checked={accepted}
+                onChange={(e) => setAcceptedVersion(e.target.checked ? notice.version : null)}
+              />
+              <span className="font-medium">Leí y acepto el aviso de privacidad</span>
+            </label>
+          </>
+        ) : privacy.error ? (
+          <ErrorNotice message={privacy.error} onRetry={privacy.reload} />
+        ) : (
+          <Spinner label="Cargando el aviso de privacidad…" />
+        )}
+      </div>
+
       {error && (
         <div className="mt-4">
           <ErrorNotice message={error} />
@@ -752,7 +799,13 @@ function ConfirmStep({
       )}
 
       <StickyAction>
-        <Button size="lg" className="w-full sm:w-auto" onClick={confirm} loading={sending}>
+        <Button
+          size="lg"
+          className="w-full sm:w-auto"
+          onClick={confirm}
+          loading={sending}
+          disabled={!accepted}
+        >
           Confirmar turno
         </Button>
       </StickyAction>

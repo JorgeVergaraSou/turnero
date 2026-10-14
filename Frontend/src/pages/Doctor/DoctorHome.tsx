@@ -6,6 +6,7 @@ import { useAsync } from '@/hooks/useAsync';
 import type { Appointment, DoctorDashboard } from '@/interfaces';
 import { StaffPaths } from '@/models';
 import { CallPatientButton } from '@/components/CallPatientButton';
+import { HistoryExportsNotice } from '@/components/HistoryExportParts';
 import { Button, EmptyState, ErrorNotice, Panel, Spinner, StatusBadge } from '@/components/ui';
 import { useClinicSettings } from '@/hooks/useClinicSettings';
 import { addDays, clinicToday, longDate, shortTime } from '@/utilities';
@@ -50,6 +51,12 @@ export function DoctorHomePage() {
   return (
     <div className="grid max-w-6xl gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="min-w-0">
+        <HistoryExportsNotice
+          load={() => doctorApi.historyExportSummary()}
+          to={StaffPaths.DOCTOR_HISTORY_EXPORTS}
+          singular="pedido de copia de historia clínica en curso"
+          plural="pedidos de copia de historia clínica en curso"
+        />
         <header className="mb-6">
           <p className="text-ink-soft">
             {me.data && `${me.data.firstName} ${me.data.lastName}`}

@@ -129,3 +129,17 @@ export const WEEKDAYS = [
   { value: 6, label: 'Sábado' },
   { value: 7, label: 'Domingo' },
 ];
+
+/** "5 h 20 min", "2 días 3 h", "40 min": el tiempo, sin signo. */
+export function durationText(totalMinutes: number): string {
+  const minutes = Math.abs(Math.round(totalMinutes));
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    const rest = minutes % 60;
+    return rest ? `${hours} h ${rest} min` : `${hours} h`;
+  }
+  const days = Math.floor(hours / 24);
+  const restHours = hours % 24;
+  return `${days} ${days === 1 ? 'día' : 'días'}${restHours ? ` ${restHours} h` : ''}`;
+}

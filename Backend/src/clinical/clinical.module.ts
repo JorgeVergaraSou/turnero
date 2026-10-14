@@ -13,6 +13,13 @@ import { AppointmentCallsService } from './appointment-calls.service';
 import { AppointmentEntity } from '@/appointments/entities/appointment.entity';
 import { AppointmentsModule } from '@/appointments/appointments.module';
 import { ProfessionalsModule } from '@/professionals/professionals.module';
+import { SettingsModule } from '@/settings/settings.module';
+import { HistoryExportRequestEntity } from './history-export/history-export-request.entity';
+import { HistoryExportsService } from './history-export/history-exports.service';
+import {
+  AdminHistoryExportsController,
+  DoctorHistoryExportsController,
+} from './history-export/history-exports.controller';
 
 /**
  * Atención médica e historia clínica. Punto de extensión para lo futuro
@@ -30,15 +37,22 @@ import { ProfessionalsModule } from '@/professionals/professionals.module';
       ConsultationAmendmentEntity,
       AppointmentEntity,
       AppointmentCallEntity,
+      HistoryExportRequestEntity,
     ]),
     AppointmentsModule,
     ProfessionalsModule,
+    SettingsModule,
   ],
-  controllers: [DoctorController],
+  controllers: [
+    DoctorController,
+    AdminHistoryExportsController,
+    DoctorHistoryExportsController,
+  ],
   providers: [
     ConsultationsService,
     ClinicalAccessService,
     AppointmentCallsService,
+    HistoryExportsService,
   ],
 })
 export class ClinicalModule {}

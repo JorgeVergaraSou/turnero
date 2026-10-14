@@ -11,6 +11,7 @@ import {
   UpdateDisplayDeviceDto,
 } from './dto/display-device.dto';
 import { generateDisplayToken, hashDisplayToken } from './display-token.util';
+import { openText, sealText } from '@/auth/two-factor/secret-box.util';
 import { DisplayStreamService } from './display-stream.service';
 import { AuditService } from '@/audit/audit.service';
 import { AuditAction } from '@/audit/audit.enums';
@@ -25,9 +26,11 @@ export interface DisplayDeviceView {
   active: boolean;
   lastSeenAt: Date | null;
   createdAt: Date;
+  /** true si el admin puede volver a ver el enlace (si no, hay que cambiar el token) */
+  tokenRecoverable: boolean;
 }
 
-/** Solo al crear o rotar: el token se muestra UNA vez y no se puede volver a ver. */
+/** Al crear o cambiar el token. Después se puede volver a ver con `reveal` (solo el admin, auditado). */
 export interface DisplayDeviceWithToken extends DisplayDeviceView {
   token: string;
 }
@@ -38,7 +41,11 @@ const toView = (d: DisplayDeviceEntity): DisplayDeviceView => ({
   active: d.active,
   lastSeenAt: d.lastSeenAt,
   createdAt: d.createdAt,
+  tokenRecoverable: !!d.tokenEncrypted,
 });
+
+/** Propósito de la clave con que se cifra el token (distinta de la de 2FA). */
+const TOKEN_PURPOSE = 'display-token';
 
 @Injectable()
 export class DisplayDevicesService {
@@ -92,6 +99,7 @@ export class DisplayDevicesService {
         this.repository.create({
           name: dto.name,
           tokenHash: hashDisplayToken(token),
+          tokenEncrypted: sealText(TOKEN_PURPOSE, token),
         }),
       );
       await this.auditService.record({
@@ -145,6 +153,47 @@ export class DisplayDevicesService {
     }
   }
 
+  /**
+   * Vuelve a mostrar el token (y con él el enlace) de una pantalla. Solo el
+   * admin, siempre auditado (sin el token). Las pantallas creadas antes de
+   * que existiera esto no lo tienen guardado: hay que cambiarles el token.
+   */
+  async reveal(id: number, actor: Actor): Promise<{ token: string }> {
+    try {
+      const device = await this.repository.findOneBy({ id });
+      if (!device) throw new NotFoundException('Pantalla no encontrada');
+      if (!device.tokenEncrypted) {
+        throw new ConflictException(
+          'El token de esta pantalla no se puede recuperar. Cambialo por uno nuevo.',
+        );
+      }
+      let token: string;
+      try {
+        token = openText(TOKEN_PURPOSE, device.tokenEncrypted);
+      } catch {
+        // cambió la clave de cifrado del servidor: ya no se puede abrir
+        throw new ConflictException(
+          'El token de esta pantalla no se puede recuperar. Cambialo por uno nuevo.',
+        );
+      }
+      await this.auditService.record({
+        actor,
+        action: AuditAction.DISPLAY_TOKEN_VIEW,
+        resourceType: 'display_device',
+        resourceId: id,
+      });
+      return { token };
+    } catch (error) {
+      handleServiceError(
+        error,
+        settingsErrorLogger,
+        'DisplayDevicesService.reveal',
+        'Error al recuperar el token de la pantalla',
+        { id },
+      );
+    }
+  }
+
   /** Cambia el token (si se perdió o se filtró): el anterior deja de valer
    * al instante y se corta el stream abierto con él. */
   async rotateToken(id: number, actor: Actor): Promise<DisplayDeviceWithToken> {
@@ -153,6 +202,7 @@ export class DisplayDevicesService {
       if (!device) throw new NotFoundException('Pantalla no encontrada');
       const token = generateDisplayToken();
       device.tokenHash = hashDisplayToken(token);
+      device.tokenEncrypted = sealText(TOKEN_PURPOSE, token);
       const saved = await this.repository.save(device);
       await this.auditService.record({
         actor,

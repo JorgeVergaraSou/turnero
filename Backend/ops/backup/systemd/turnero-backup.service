@@ -1,0 +1,27 @@
+[Unit]
+Description=Respaldo cifrado de Turnero
+Documentation=file:///opt/turnero/Backend/ops/backup/RESPALDOS.md
+After=mysql.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=turnero-backup
+# El grupo de la app, para poder leer su .env (se respalda cifrado y de ahí sale el SMTP de los avisos)
+SupplementaryGroups=turnero
+ExecStart=/opt/turnero/Backend/ops/backup/backup.sh
+# Un respaldo grande puede tardar, pero no infinito
+TimeoutStartSec=2h
+Nice=10
+IOSchedulingClass=idle
+
+# Endurecimiento: el servicio solo puede escribir en la carpeta de respaldos
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/backups/turnero
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true

@@ -27,6 +27,21 @@ export class DisplayDeviceEntity {
   })
   tokenHash!: string;
 
+  /**
+   * El token cifrado (AES-256-GCM): solo para que el ADMIN pueda volver a ver
+   * el enlace. La entidad nunca sale cruda por la API (se mapea a mano) y el
+   * token solo se descifra en `reveal`, con auditoría. null = pantalla
+   * creada antes de que se pudiera recuperar: hay que cambiarle el token.
+   * La autenticación sigue usando únicamente el hash.
+   */
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    name: 'token_encrypted',
+  })
+  tokenEncrypted!: string | null;
+
   @Column({ type: 'boolean', default: true })
   active!: boolean;
 

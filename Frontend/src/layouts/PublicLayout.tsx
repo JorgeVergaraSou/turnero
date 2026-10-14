@@ -30,6 +30,12 @@ export function PublicLayout() {
       </main>
 
       <footer className="mx-auto max-w-2xl px-4 pb-8 text-sm text-ink-faint sm:px-6">
+        <NavLink to={`/${PublicRoutes.PRIVACY}`} className="hover:text-ink-soft">
+          Política de privacidad
+        </NavLink>
+        <span aria-hidden className="mx-2">
+          ·
+        </span>
         <NavLink to={`/${PublicRoutes.LOGIN}`} className="hover:text-ink-soft">
           Acceso del personal
         </NavLink>

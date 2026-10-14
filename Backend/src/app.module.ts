@@ -6,6 +6,7 @@ import { AuditModule } from './audit/audit.module';
 import { SettingsModule } from './settings/settings.module';
 import { SpecialtiesModule } from './specialties/specialties.module';
 import { DisplaysModule } from './displays/displays.module';
+import { PrivacyModule } from './privacy/privacy.module';
 import { HealthInsurancesModule } from './health-insurances/health-insurances.module';
 import { OfficesModule } from './offices/offices.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
@@ -118,6 +119,7 @@ import * as Joi from 'joi';
     NotificationsModule,
     ClinicalModule,
     DisplaysModule,
+    PrivacyModule,
   ],
   controllers: [],
   providers: [

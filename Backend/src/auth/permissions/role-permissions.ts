@@ -30,6 +30,8 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     Permission.AUDIT_READ,
     Permission.SETTINGS_MANAGE,
     Permission.DISPLAYS_MANAGE,
+    Permission.HISTORY_EXPORT_TRACK,
+    Permission.HISTORY_EXPORT_REASSIGN,
   ],
   [Role.RECEPCIONISTA]: [
     Permission.SCHEDULES_READ,
@@ -37,6 +39,8 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     Permission.PATIENTS_WRITE,
     Permission.APPOINTMENTS_READ,
     Permission.APPOINTMENTS_MANAGE,
+    Permission.HISTORY_EXPORT_REQUEST,
+    Permission.HISTORY_EXPORT_TRACK,
   ],
   [Role.MEDICO]: [
     Permission.OWN_AGENDA_READ,
@@ -44,6 +48,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     Permission.CALLS_MAKE,
     Permission.CLINICAL_READ,
     Permission.CLINICAL_WRITE,
+    Permission.HISTORY_EXPORT_ISSUE,
   ],
 };
 

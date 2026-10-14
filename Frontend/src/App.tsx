@@ -17,6 +17,7 @@ import MyAppointmentPage from './pages/Public/MyAppointment/MyAppointment'
 // las pantallas del personal se cargan recién cuando se usan.
 const Login = lazy(() => import('./pages/Login/Login'))
 const ResetPasswordPage = lazy(() => import('./pages/Login/ResetPassword'))
+const PrivacyPage = lazy(() => import('./pages/Public/Privacy/Privacy'))
 const DisplayPage = lazy(() => import('./pages/Display/DisplayScreen'))
 const Private = lazy(() => import('./pages/Private/Private'))
 const StaffLayout = lazy(() => import('./layouts/StaffLayout'))
@@ -26,6 +27,7 @@ const ReceptionHomePage = lazy(() => import('./pages/Reception/ReceptionHome'))
 const AgendaPage = lazy(() => import('./pages/Reception/Agenda'))
 const NewAppointmentPage = lazy(() => import('./pages/Reception/NewAppointment'))
 const PatientsPage = lazy(() => import('./pages/Reception/Patients'))
+const ReceptionHistoryExportsPage = lazy(() => import('./pages/Reception/HistoryExports'))
 const AdminDashboardPage = lazy(() => import('./pages/Admin/Dashboard'))
 const ProfessionalsPage = lazy(() => import('./pages/Admin/Professionals'))
 const SchedulesPage = lazy(() => import('./pages/Admin/Schedules'))
@@ -38,6 +40,7 @@ const HealthInsurancesPage = lazy(() => import('./pages/Admin/Catalogs').then((m
 const OfficesPage = lazy(() => import('./pages/Admin/Catalogs').then((m) => ({ default: m.OfficesPage })))
 const DoctorHomePage = lazy(() => import('./pages/Doctor/DoctorHome'))
 const AttentionPage = lazy(() => import('./pages/Doctor/Attention'))
+const DoctorHistoryExportsPage = lazy(() => import('./pages/Doctor/HistoryExports'))
 const DoctorPatientsPage = lazy(() => import('./pages/Doctor/DoctorPatients'))
 const DoctorPatientPage = lazy(() => import('./pages/Doctor/DoctorPatients').then((m) => ({ default: m.DoctorPatientPage })))
 
@@ -55,6 +58,7 @@ function App() {
             <Route element={<PublicLayout />}>
               <Route index element={<BookingPage />} />
               <Route path={PublicRoutes.MY_APPOINTMENT} element={<MyAppointmentPage />} />
+              <Route path={PublicRoutes.PRIVACY} element={<PrivacyPage />} />
             </Route>
 
             {/* TV de la sala de espera: sin layout ni sesión, usa token de pantalla */}
@@ -77,6 +81,7 @@ function App() {
                   <Route path={`${RECEPCION}/agenda`} element={<AgendaPage />} />
                   <Route path={`${RECEPCION}/nuevo-turno`} element={<NewAppointmentPage />} />
                   <Route path={`${RECEPCION}/pacientes`} element={<PatientsPage />} />
+                  <Route path={`${RECEPCION}/copias-historia`} element={<ReceptionHistoryExportsPage />} />
                 </Route>
 
                 <Route element={<RoleGuard roles={[Roles.ADMIN]} />}>
@@ -97,6 +102,7 @@ function App() {
                 <Route element={<RoleGuard roles={[Roles.MEDICO]} />}>
                   <Route path={MEDICO} element={<DoctorHomePage />} />
                   <Route path={`${MEDICO}/pacientes`} element={<DoctorPatientsPage />} />
+                  <Route path={`${MEDICO}/copias-historia`} element={<DoctorHistoryExportsPage />} />
                   <Route path={`${MEDICO}/pacientes/:patientId`} element={<DoctorPatientPage />} />
                   <Route path={`${MEDICO}/atencion/:appointmentId`} element={<AttentionPage />} />
                 </Route>

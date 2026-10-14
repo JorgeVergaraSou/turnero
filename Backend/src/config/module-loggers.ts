@@ -50,3 +50,4 @@ export const appointmentsErrorLogger = buildModuleErrorLogger('appointments');
 export const clinicalErrorLogger = buildModuleErrorLogger('clinical');
 export const notificationsErrorLogger = buildModuleErrorLogger('notifications');
 export const settingsErrorLogger = buildModuleErrorLogger('settings');
+export const privacyErrorLogger = buildModuleErrorLogger('privacy');

@@ -8,6 +8,7 @@ import {
   prepareE2eDatabase,
   unique,
   uniqueDni,
+  currentPrivacyVersion,
 } from './e2e-helpers';
 import { ClinicFixture, createClinic, patientData } from './e2e-fixtures';
 import { Role } from '../src/common/enums/role.enum';
@@ -22,6 +23,9 @@ const DEFAULT_SETTINGS = {
   publicCancelMinHours: 0,
 };
 
+/** versión vigente del aviso de privacidad (la reserva pública debe aceptarla) */
+let privacyVersion = 0;
+
 describe('Administración: usuarios, auditoría y configuración (e2e)', () => {
   let app: INestApplication;
   let server: any;
@@ -34,6 +38,7 @@ describe('Administración: usuarios, auditoría y configuración (e2e)', () => {
     await prepareE2eDatabase();
     app = await createE2eApp();
     server = app.getHttpServer();
+    privacyVersion = await currentPrivacyVersion(server);
     admin = await createUserAndLogin(app, Role.ADMIN);
     reception = await createUserAndLogin(app, Role.RECEPCIONISTA);
     clinic = await createClinic(app, admin.token);
@@ -224,6 +229,7 @@ describe('Administración: usuarios, auditoría y configuración (e2e)', () => {
         const res = await request(server)
           .post(`${API}/public/appointments`)
           .send({
+            privacyVersion,
             professionalId: clinic.professionalId,
             specialtyId: clinic.specialtyId,
             date: tomorrow,
@@ -297,6 +303,7 @@ describe('Administración: usuarios, auditoría y configuración (e2e)', () => {
       const booked = await request(server)
         .post(`${API}/public/appointments`)
         .send({
+          privacyVersion,
           professionalId: clinic.professionalId,
           specialtyId: clinic.specialtyId,
           date: tomorrow,

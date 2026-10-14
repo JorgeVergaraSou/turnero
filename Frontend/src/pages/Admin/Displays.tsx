@@ -21,7 +21,8 @@ const screenLink = (token: string) => `${window.location.origin}/pantalla#token=
 /**
  * Pantallas de la sala de espera (televisores). Cada una tiene un token
  * propio que solo sirve para leer el stream de llamados: no es un usuario.
- * El token se muestra una sola vez, al crearla o al cambiarlo.
+ * El token se muestra al crearla o cambiarlo, y el admin puede volver a verlo
+ * cuando quiera con «Ver enlace» (queda auditado).
  */
 export function DisplaysPage() {
   const list = useAsync(() => adminApi.displayDevices(), []);
@@ -34,6 +35,17 @@ export function DisplaysPage() {
       list.reload();
     } catch (err) {
       showError(getErrorMessage(err));
+    }
+  };
+
+  /** Vuelve a mostrar el enlace de una pantalla ya creada. */
+  const showLink = async (d: DisplayDevice) => {
+    try {
+      const { token } = await adminApi.displayDeviceToken(d.id);
+      setIssued({ ...d, token });
+    } catch (err) {
+      showError(getErrorMessage(err));
+      list.reload();
     }
   };
 
@@ -74,9 +86,19 @@ export function DisplaysPage() {
                   <p className="text-sm text-ink-soft">
                     {d.lastSeenAt ? `Última conexión: ${dateTime(d.lastSeenAt)}` : 'Nunca se conectó'}
                   </p>
+                  {!d.tokenRecoverable && (
+                    <p className="text-sm text-st-attention">
+                      Su enlace no se puede volver a ver. Cambiá el token una vez y desde ahí sí.
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <ActiveChip active={d.active} />
+                  {d.tokenRecoverable && (
+                    <Button size="sm" variant="secondary" onClick={() => showLink(d)}>
+                      Ver enlace
+                    </Button>
+                  )}
                   <Button size="sm" variant="secondary" onClick={() => rotate(d)}>
                     Cambiar token
                   </Button>
@@ -164,7 +186,7 @@ function CreateModal({
   );
 }
 
-/** El token se ve una sola vez: hay que copiarlo (o el enlace) antes de cerrar. */
+/** Token y enlace de una pantalla, para copiar. Se puede volver a abrir con «Ver enlace». */
 function TokenModal({ device, onClose }: { device: DisplayDeviceWithToken; onClose: () => void }) {
   const [copied, setCopied] = useState<'token' | 'link' | null>(null);
   const copy = async (what: 'token' | 'link') => {
@@ -177,11 +199,12 @@ function TokenModal({ device, onClose }: { device: DisplayDeviceWithToken; onClo
       onClose={onClose}
       size="lg"
       title={`Token de «${device.name}»`}
-      footer={<Button onClick={onClose}>Ya lo copié</Button>}
+      footer={<Button onClick={onClose}>Cerrar</Button>}
     >
       <div className="grid gap-4">
         <p className="rounded-(--radius-control) bg-st-attention-wash px-4 py-3 font-medium text-st-attention">
-          Copialo ahora: por seguridad no se vuelve a mostrar. Si lo perdés, se cambia por uno nuevo.
+          Tratalo como una clave: quien tenga este enlace puede ver los llamados de la sala. Podés volver a verlo
+          cuando quieras con «Ver enlace»; si alguien que no debe lo vio, cambiá el token.
         </p>
         <div>
           <p className="mb-1 font-medium">Token</p>

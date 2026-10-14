@@ -1,0 +1,14 @@
+[Unit]
+Description=Chequeo de antigüedad del último respaldo de Turnero
+Documentation=file:///opt/turnero/Backend/ops/backup/RESPALDOS.md
+
+[Service]
+Type=oneshot
+User=turnero-backup
+SupplementaryGroups=turnero
+ExecStart=/opt/turnero/Backend/ops/backup/check-freshness.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/var/backups/turnero

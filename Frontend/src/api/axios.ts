@@ -38,7 +38,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
 
-  (error) => {
+  async (error) => {
 
     const enLogin = window.location.pathname.startsWith(`/${PublicRoutes.LOGIN}`);
 
@@ -83,7 +83,16 @@ api.interceptors.response.use(
 
     // El backend responde { success:false, message } y, en errores de
     // validación, message es un array — se unen en un solo texto.
-    const data = error.response?.data?.message;
+    // (las descargas piden la respuesta como Blob: el error llega como Blob y hay que leerlo)
+    let body = error.response?.data;
+    if (body instanceof Blob) {
+      try {
+        body = JSON.parse(await body.text());
+      } catch {
+        body = undefined;
+      }
+    }
+    const data = body?.message;
     const message =
       (Array.isArray(data) ? data.join('. ') : data) ||
       (!error.response ? 'No se pudo conectar con el servidor' : 'Error desconocido');

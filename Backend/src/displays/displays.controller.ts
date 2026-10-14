@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   MessageEvent,
@@ -29,7 +30,8 @@ import { Actor } from '@/common/interfaces/actor.interface';
 /**
  * Administración de las pantallas de sala. Sin DELETE a propósito: se
  * desactivan (PATCH active=false), que también corta su stream abierto.
- * El token se devuelve UNA sola vez (al crear o rotar).
+ * El token se devuelve al crear o rotar, y el admin puede volver a verlo
+ * después con GET :id/token (queda auditado).
  */
 @Controller('admin/display-devices')
 export class AdminDisplayDevicesController {
@@ -55,6 +57,14 @@ export class AdminDisplayDevicesController {
     @CurrentActor() actor: Actor,
   ) {
     return this.devices.update(id, dto, actor);
+  }
+
+  /** Vuelve a mostrar el token (y el enlace) de una pantalla. Auditado y sin caché. */
+  @Get(':id/token')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions(Permission.DISPLAYS_MANAGE)
+  reveal(@Param('id', ParseIntPipe) id: number, @CurrentActor() actor: Actor) {
+    return this.devices.reveal(id, actor);
   }
 
   @Post(':id/rotate-token')

@@ -414,6 +414,23 @@ export interface AdminClinicSettings extends ClinicSettings {
 
 export type CallNameFormat = 'FULL' | 'ABBREVIATED' | 'CODE';
 
+/** Aviso de privacidad vigente (lo ve cualquiera: reserva y página /privacidad). */
+export interface PrivacyNotice {
+  version: number;
+  /** aviso breve que se muestra junto a la casilla de la reserva */
+  summary: string;
+  /** política completa */
+  policy: string;
+  /** true = texto en revisión legal */
+  draft: boolean;
+  publishedAt: string;
+}
+
+/** Una versión del aviso tal como la ve el administrador. */
+export interface AdminPrivacyNotice extends PrivacyNotice {
+  author: string | null;
+}
+
 /** Pantalla de sala (TV) tal como la ve el administrador: nunca trae el token. */
 export interface DisplayDevice {
   id: number;
@@ -421,9 +438,66 @@ export interface DisplayDevice {
   active: boolean;
   lastSeenAt: string | null;
   createdAt: string;
+  /** si el admin puede volver a ver el enlace (si no, hay que cambiar el token una vez) */
+  tokenRecoverable: boolean;
 }
 
-/** Solo al crear o cambiar el token: se muestra una vez y no se puede volver a ver. */
+/** Al crear o cambiar el token. Después se vuelve a ver con «Ver enlace». */
 export interface DisplayDeviceWithToken extends DisplayDevice {
   token: string;
+}
+
+// ---------------- copia de la historia clínica (pedidos) ----------------
+
+export type HistoryExportStatus = 'PENDIENTE' | 'EMITIDA' | 'ENTREGADA' | 'CANCELADA';
+export type RequesterType = 'TITULAR' | 'REPRESENTANTE';
+/** qué pedidos listar: los que siguen corriendo contra el plazo, o todos */
+export type HistoryExportScope = 'open' | 'all';
+
+/** Un pedido de copia: solo el trámite, nunca contenido clínico. */
+export interface HistoryExport {
+  id: number;
+  status: HistoryExportStatus;
+  patient: { id: number; firstName: string; lastName: string; documentNumber: string };
+  requesterType: RequesterType;
+  requesterName: string | null;
+  requesterDocument: string | null;
+  requesterRelationship: string | null;
+  professional: { id: number; firstName: string; lastName: string };
+  requestedAt: string;
+  dueAt: string;
+  /** minutos hasta el vencimiento (negativo si ya venció); null si ya no corre el plazo */
+  minutesLeft: number | null;
+  overdue: boolean;
+  issuedAt: string | null;
+  issueCount: number;
+  consultationsCount: number | null;
+  deliveredAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+}
+
+export interface HistoryExportSummary {
+  open: number;
+  overdue: number;
+  nextDueAt: string | null;
+  /** minutos hasta ese vencimiento (negativo si ya venció) */
+  nextMinutesLeft: number | null;
+}
+
+export interface HistoryExportCandidate {
+  id: number;
+  firstName: string;
+  lastName: string;
+  specialties: string[];
+}
+
+export interface HistoryExportInput {
+  patientId: number;
+  assignedProfessionalId: number;
+  requesterType: RequesterType;
+  requesterName?: string;
+  requesterDocument?: string;
+  requesterRelationship?: string;
+  identityChecked: boolean;
 }

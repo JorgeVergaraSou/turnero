@@ -14,6 +14,7 @@ import {
   TextInput,
 } from '@/components/ui';
 import { getErrorMessage } from '@/utilities';
+import { PrivacyNoticeSection } from './PrivacyNoticeSection';
 
 /** Configuración administrativa del consultorio (solo ADMIN). */
 export function SettingsPage() {
@@ -271,6 +272,10 @@ function SettingsForm({ initial }: { initial: AdminClinicSettings }) {
           </Button>
         </div>
       </form>
+
+      <div className="mt-5">
+        <PrivacyNoticeSection />
+      </div>
     </div>
   );
 }

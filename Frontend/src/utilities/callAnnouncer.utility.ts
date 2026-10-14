@@ -52,6 +52,7 @@ export class CallAnnouncer {
   private running = false;
   private active = false;
   private repeats = DEFAULT_VOICE_REPEATS;
+  private blockedHandler: (() => void) | null = null;
 
   /** Cuántas veces se dice cada llamado (lo define el administrador en Configuración). */
   setRepeats(repeats: number): void {
@@ -69,17 +70,72 @@ export class CallAnnouncer {
     return pickSpanishVoice(voices) ? 'spanish' : 'other';
   }
 
-  /** Desde un gesto del usuario: habilita el audio y confirma con un timbre y una frase. */
-  activate(): void {
-    this.active = true;
+  /** Quién se entera si el navegador bloquea la voz estando activo (para mostrar de nuevo el botón). */
+  onBlocked(handler: (() => void) | null): void {
+    this.blockedHandler = handler;
+  }
+
+  private ensureContext(): AudioContext | null {
     if (!this.context) {
       const Ctor: AudioContextConstructor | undefined =
         window.AudioContext ??
         (window as unknown as { webkitAudioContext?: AudioContextConstructor }).webkitAudioContext;
       if (Ctor) this.context = new Ctor();
     }
-    void this.context?.resume();
-    void this.confirm();
+    return this.context;
+  }
+
+  /**
+   * Prueba, sin ningún gesto del usuario, si el navegador YA permite sonido
+   * en esta página (por ejemplo, Chrome en modo quiosco con
+   * `--autoplay-policy=no-user-gesture-required`, o Firefox con el sitio
+   * permitido en Autoplay). Ninguna página puede saltarse esa decisión:
+   * solo se averigua. Si devuelve true, `activate(false)` deja el sonido
+   * andando sin tocar nada.
+   */
+  async probeAutoplay(): Promise<boolean> {
+    const context = this.ensureContext();
+    if (!context) return false;
+    await wait(250); // si está permitido, el contexto pasa solo a "running"
+    if (context.state !== 'running') return false;
+    return this.probeSpeech();
+  }
+
+  /** Una frase en silencio: si el navegador bloquea la voz sin gesto, avisa con `not-allowed`. */
+  private probeSpeech(): Promise<boolean> {
+    // sin voces no hay nada que bloquear: queda el timbre
+    if (!this.speechSupported || this.voiceStatus() === 'none') return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const utterance = new SpeechSynthesisUtterance('.');
+      utterance.volume = 0;
+      const timer = setTimeout(() => resolve(false), 2000);
+      const finish = (ok: boolean) => {
+        clearTimeout(timer);
+        resolve(ok);
+      };
+      utterance.onstart = () => finish(true);
+      utterance.onend = () => finish(true);
+      utterance.onerror = () => finish(false);
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+
+  /**
+   * Habilita el audio. Desde un gesto del usuario (botón, clic, tecla) con
+   * `confirm` = true confirma con un timbre y una frase; la activación
+   * automática (sin gesto) pasa `confirm` = false para que la TV no hable sola.
+   */
+  activate(confirm = true): void {
+    this.active = true;
+    void this.ensureContext()?.resume();
+    if (confirm) void this.confirm();
+  }
+
+  /** El navegador bloqueó la voz: queda silenciado y se avisa para pedir un gesto. */
+  private handleBlocked(): void {
+    this.active = false;
+    this.queue = [];
+    this.blockedHandler?.();
   }
 
   /** Silencia y corta lo que esté sonando. */
@@ -161,7 +217,10 @@ export class CallAnnouncer {
         resolve();
       };
       utterance.onend = done;
-      utterance.onerror = done;
+      utterance.onerror = (event) => {
+        if (event.error === 'not-allowed') this.handleBlocked();
+        done();
+      };
       window.speechSynthesis.speak(utterance);
     });
   }

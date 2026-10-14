@@ -11,6 +11,7 @@ import {
   prepareE2eDatabase,
   unique,
   uniqueDni,
+  currentPrivacyVersion,
 } from './e2e-helpers';
 import { ClinicFixture, createClinic, patientData } from './e2e-fixtures';
 import { Role } from '../src/common/enums/role.enum';
@@ -29,6 +30,9 @@ import {
  * estos pedidos antes de llegar a la validación, así que el contador se
  * reinicia antes de cada test; el propio límite se prueba aparte.
  */
+/** versión vigente del aviso de privacidad (la reserva pública debe aceptarla) */
+let privacyVersion = 0;
+
 describe('Seguridad de la reserva pública (e2e)', () => {
   let app: INestApplication;
   let server: any;
@@ -44,6 +48,7 @@ describe('Seguridad de la reserva pública (e2e)', () => {
     await prepareE2eDatabase();
     app = await createE2eApp();
     server = app.getHttpServer();
+    privacyVersion = await currentPrivacyVersion(server);
     dataSource = app.get(DataSource);
     admin = await createUserAndLogin(app, Role.ADMIN);
     reception = await createUserAndLogin(app, Role.RECEPCIONISTA);
@@ -65,6 +70,7 @@ describe('Seguridad de la reserva pública (e2e)', () => {
     date: tomorrow,
     startTime: '10:00',
     patient: patientData(uniqueDni()),
+    privacyVersion,
     ...overrides,
   });
 

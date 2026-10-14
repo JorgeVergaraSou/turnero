@@ -7,10 +7,14 @@ import {
   createUserAndLogin,
   prepareE2eDatabase,
   uniqueDni,
+  currentPrivacyVersion,
 } from './e2e-helpers';
 import { ClinicFixture, createClinic, patientData } from './e2e-fixtures';
 import { Role } from '../src/common/enums/role.enum';
 import { addDays, clinicNow } from '../src/common/utils/clinic-time.util';
+
+/** versión vigente del aviso de privacidad (la reserva pública debe aceptarla) */
+let privacyVersion = 0;
 
 describe('Turnos (e2e)', () => {
   let app: INestApplication;
@@ -25,6 +29,7 @@ describe('Turnos (e2e)', () => {
     await prepareE2eDatabase();
     app = await createE2eApp();
     server = app.getHttpServer();
+    privacyVersion = await currentPrivacyVersion(server);
     admin = await createUserAndLogin(app, Role.ADMIN);
     reception = await createUserAndLogin(app, Role.RECEPCIONISTA);
     clinic = await createClinic(app, admin.token);
@@ -83,6 +88,7 @@ describe('Turnos (e2e)', () => {
       const booked = await request(server)
         .post(`${API}/public/appointments`)
         .send({
+          privacyVersion,
           professionalId: clinic.professionalId,
           specialtyId: clinic.specialtyId,
           date: tomorrow,
@@ -112,6 +118,7 @@ describe('Turnos (e2e)', () => {
       const booked = await request(server)
         .post(`${API}/public/appointments`)
         .send({
+          privacyVersion,
           professionalId: clinic.professionalId,
           specialtyId: clinic.specialtyId,
           date: tomorrow,

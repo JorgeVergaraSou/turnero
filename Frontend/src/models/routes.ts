@@ -5,6 +5,8 @@ export const PublicRoutes = {
     RESET_PASSWORD: 'reset-password',
     // consultar / cancelar un turno con código + DNI (paciente sin cuenta)
     MY_APPOINTMENT: 'mi-turno',
+    // política de privacidad vigente (texto público)
+    PRIVACY: 'privacidad',
     // pantalla de la TV de la sala de espera (autenticada con token de pantalla, no con usuario)
     DISPLAY: 'pantalla',
 }
@@ -29,6 +31,9 @@ export const StaffPaths = {
       `/${PrivateRoutes.RECEPCION}/agenda?fecha=${date}${professionalId ? `&profesional=${professionalId}` : ''}`,
     NEW_APPOINTMENT: `/${PrivateRoutes.RECEPCION}/nuevo-turno`,
     PATIENTS: `/${PrivateRoutes.RECEPCION}/pacientes`,
+    HISTORY_EXPORTS: `/${PrivateRoutes.RECEPCION}/copias-historia`,
+    /** pedidos de copia con el alta de un pedido abierta para un paciente */
+    historyExportFor: (patientId: number) => `/${PrivateRoutes.RECEPCION}/copias-historia?paciente=${patientId}`,
     // administración (ADMIN)
     ADMIN_HOME: `/${PrivateRoutes.ADMIN}`,
     PROFESSIONALS: `/${PrivateRoutes.ADMIN}/profesionales`,
@@ -44,6 +49,7 @@ export const StaffPaths = {
     // panel médico (MEDICO)
     DOCTOR_HOME: `/${PrivateRoutes.MEDICO}`,
     DOCTOR_PATIENTS: `/${PrivateRoutes.MEDICO}/pacientes`,
+    DOCTOR_HISTORY_EXPORTS: `/${PrivateRoutes.MEDICO}/copias-historia`,
     doctorPatient: (id: number) => `/${PrivateRoutes.MEDICO}/pacientes/${id}`,
     attention: (appointmentId: number) => `/${PrivateRoutes.MEDICO}/atencion/${appointmentId}`,
     // comunes

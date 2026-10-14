@@ -54,6 +54,7 @@ const ACTION_LABEL: Record<string, string> = {
   DISPLAY_CREATE: 'Creó una pantalla de sala',
   DISPLAY_UPDATE: 'Editó una pantalla de sala',
   DISPLAY_TOKEN_ROTATE: 'Cambió el token de una pantalla de sala',
+  DISPLAY_TOKEN_VIEW: 'Vio el token de una pantalla de sala',
   VIEW_PATIENT: 'Vio los datos de un paciente',
   VIEW_CLINICAL_HISTORY: 'Vio la historia clínica',
   VIEW_MEDICAL_CONSULTATION: 'Vio una consulta',
@@ -61,6 +62,11 @@ const ACTION_LABEL: Record<string, string> = {
   UPDATE_MEDICAL_CONSULTATION: 'Editó una consulta en borrador',
   FINALIZE_MEDICAL_CONSULTATION: 'Finalizó una consulta',
   AMEND_MEDICAL_CONSULTATION: 'Agregó una enmienda',
+  HISTORY_EXPORT_REQUEST: 'Registró un pedido de copia de historia clínica',
+  HISTORY_EXPORT_REASSIGN: 'Reasignó un pedido de copia de historia clínica',
+  HISTORY_EXPORT_CANCEL: 'Canceló un pedido de copia de historia clínica',
+  HISTORY_EXPORT_ISSUE: 'Generó la copia de una historia clínica',
+  HISTORY_EXPORT_DELIVER: 'Entregó la copia de una historia clínica',
 };
 
 const ROLE_LABEL: Record<string, string> = {

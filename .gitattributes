@@ -1,2 +1,7 @@
 # Evita diferencias falsas por saltos de línea entre Windows (CRLF) y el resto (LF)
 * text=auto
+
+# Los scripts de respaldo corren en Linux: siempre con saltos de línea LF
+*.sh text eol=lf
+*.service text eol=lf
+*.timer text eol=lf

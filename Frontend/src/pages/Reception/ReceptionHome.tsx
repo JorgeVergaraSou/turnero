@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { adminApi, receptionApi } from '@/services';
+import { adminApi, historyExportApi, receptionApi } from '@/services';
 import { useAsync } from '@/hooks/useAsync';
 import type { Appointment, Professional, ScheduleException } from '@/interfaces';
 import { StaffPaths } from '@/models';
 import { Button, ErrorNotice, PageHeader, Panel, Spinner, StatusBadge } from '@/components/ui';
 import { ContactMismatchBadge } from '@/components/ContactMismatch';
+import { HistoryExportsNotice } from '@/components/HistoryExportParts';
 import {
   EXCEPTION_LABEL,
   addDays,
@@ -124,6 +125,13 @@ export function ReceptionHomePage() {
             </Link>
           </>
         }
+      />
+
+      <HistoryExportsNotice
+        load={() => historyExportApi.summary()}
+        to={StaffPaths.HISTORY_EXPORTS}
+        singular="pedido de copia de historia clínica en curso"
+        plural="pedidos de copia de historia clínica en curso"
       />
 
       {!view ? (

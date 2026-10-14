@@ -13,6 +13,7 @@ import {
 import { SchedulingModule } from '@/scheduling/scheduling.module';
 import { ProfessionalsModule } from '@/professionals/professionals.module';
 import { PatientsModule } from '@/patients/patients.module';
+import { PrivacyModule } from '@/privacy/privacy.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PatientsModule } from '@/patients/patients.module';
     SchedulingModule,
     ProfessionalsModule,
     PatientsModule,
+    PrivacyModule,
   ],
   controllers: [PublicAppointmentsController, AdminAppointmentsController],
   providers: [

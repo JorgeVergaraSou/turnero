@@ -481,6 +481,30 @@ export class ConsultationsService {
     }
   }
 
+  /**
+   * Consultas FINALIZADAS de un paciente, de la más antigua a la más nueva,
+   * para la copia de la historia clínica. NO verifica el acceso ni audita:
+   * el llamador (HistoryExportsService) ya pasó por assertPatientAccess y
+   * audita la emisión. Se leen en tandas para no cargar todo de una vez.
+   */
+  async loadFinalizedForExport(patientId: number): Promise<ConsultationView[]> {
+    const batchSize = 25;
+    const views: ConsultationView[] = [];
+    for (let skip = 0; ; skip += batchSize) {
+      const ids = await this.consultationRepository.find({
+        select: { id: true },
+        where: { patientId, status: ConsultationStatus.FINALIZADA },
+        order: { startedAt: 'ASC', id: 'ASC' },
+        skip,
+        take: batchSize,
+      });
+      for (const { id } of ids) {
+        views.push(toConsultationView(await this.loadFull(id)));
+      }
+      if (ids.length < batchSize) return views;
+    }
+  }
+
   /** Datos administrativos de un paciente, para el médico con relación. */
   async getPatient(patientId: number, actor: Actor) {
     try {

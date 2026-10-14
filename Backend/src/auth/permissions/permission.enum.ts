@@ -26,6 +26,13 @@ export enum Permission {
   /** administrar las pantallas de sala (tokens de dispositivo) */
   DISPLAYS_MANAGE = 'displays:manage',
 
+  /** registrar y cancelar pedidos de copia de la historia clínica (recepción) */
+  HISTORY_EXPORT_REQUEST = 'history-export:request',
+  /** ver el estado de los pedidos de copia (sin contenido clínico) */
+  HISTORY_EXPORT_TRACK = 'history-export:track',
+  /** reasignar el médico de un pedido de copia (administración) */
+  HISTORY_EXPORT_REASSIGN = 'history-export:reassign',
+
   // --- agenda propia del profesional ---
   OWN_AGENDA_READ = 'own-agenda:read',
   CONSULTATIONS_ATTEND = 'consultations:attend',
@@ -35,6 +42,8 @@ export enum Permission {
   // --- clínicos ---
   CLINICAL_READ = 'clinical:read',
   CLINICAL_WRITE = 'clinical:write',
+  /** emitir la copia de la historia clínica de un paciente (médico con relación) */
+  HISTORY_EXPORT_ISSUE = 'history-export:issue',
 }
 
 /** clave de metadata donde @RequirePermissions(...) guarda los permisos

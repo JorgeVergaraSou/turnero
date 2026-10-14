@@ -1,0 +1,50 @@
+# Configuración de los respaldos de Turnero.
+# Instalar como /etc/turnero-backup/backup.conf (dueño root, permisos 640,
+# legible por el usuario "turnero-backup"). NO va en el repositorio con valores
+# reales ni dentro de la carpeta de respaldos.
+
+# --- Base de datos (la lee el usuario de SOLO LECTURA turnero_backup) ---
+DB_NAME=turnero
+DB_HOST=127.0.0.1
+DB_PORT=3306
+# Archivo con [client] user= y password= (lo crea setup-backup-user.sh, permisos 600)
+MYSQL_DEFAULTS_FILE=/etc/turnero-backup/mysql.cnf
+
+# --- Cifrado (age) ---
+# CLAVE PÚBLICA de los destinatarios, una por línea (empiezan con "age1...").
+# La clave PRIVADA no está en este servidor: la guarda el titular, aparte.
+AGE_RECIPIENTS_FILE=/etc/turnero-backup/recipients.txt
+
+# --- Dónde se guarda ---
+BACKUP_DIR=/var/backups/turnero
+# Carpeta del backend (con dist/ compilado y el .env de la app)
+APP_DIR=/opt/turnero/Backend
+# ENV_FILE=/opt/turnero/Backend/.env
+# UPLOADS_DIR=/opt/turnero/Backend/uploads
+
+# --- Rotación (de cada grupo se conserva el respaldo más nuevo; uno por año, siempre) ---
+KEEP_DAILY=14
+KEEP_WEEKLY=8
+KEEP_MONTHLY=12
+
+# --- Copia fuera del servidor (rclone). Vacío = sin copia remota. ---
+# Ejemplo: REMOTE=b2-turnero:bucket-respaldos/cliente-x
+# El remote se configura con "rclone config" para el usuario turnero-backup.
+REMOTE=
+
+# --- Alertas ---
+# A quién se le avisa por email si algo falla (usa el SMTP de la app: MAIL_* del .env)
+ALERT_TO=
+# Ping opcional a un servicio de monitoreo externo (por ejemplo healthchecks.io).
+# Avisa si el servidor entero deja de responder. Vacío = no se usa.
+HEALTHCHECK_URL=
+# Horas máximas desde el último respaldo exitoso antes de avisar
+MAX_AGE_HOURS=26
+
+# --- Programas (solo si no están en el PATH) ---
+# AGE_BIN=/usr/local/bin/age
+# MYSQL_BIN=/usr/bin/mysql
+# MYSQLDUMP_BIN=/usr/bin/mysqldump
+# RCLONE_BIN=/usr/bin/rclone
+# RCLONE_CONFIG=/etc/turnero-backup/rclone.conf
+# NODE_BIN=/usr/bin/node

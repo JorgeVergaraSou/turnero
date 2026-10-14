@@ -98,7 +98,11 @@ function Board({ token, onNewToken }: { token: string; onNewToken: (token: strin
           {clinicName}
         </div>
         <div className="flex items-center gap-[2.2vw]">
-          <SoundButton enabled={sound.enabled} onActivate={sound.activate} onMute={sound.mute} />
+          <SoundButton
+            enabled={sound.enabled}
+            onActivate={() => sound.activate()}
+            onMute={sound.mute}
+          />
           <Connection status={status} />
           <span className="text-[min(3vw,5.5vh)] font-semibold tabular">
             {time.slice(0, 5)}
@@ -132,6 +136,7 @@ function SoundButton({
   return enabled ? (
     <button
       type="button"
+      data-sound-control
       onClick={onMute}
       aria-label="Sonido activo. Tocá para silenciar"
       className="flex items-center gap-[0.8vw] text-[min(1.7vw,3.2vh)] text-paper/55"
@@ -142,6 +147,7 @@ function SoundButton({
   ) : (
     <button
       type="button"
+      data-sound-control
       onClick={onActivate}
       autoFocus
       className="flex items-center gap-[0.8vw] rounded-[0.8vw] bg-signal px-[1.6vw] py-[1vh] text-[min(1.9vw,3.6vh)] font-bold text-ink-deep hover:brightness-110"

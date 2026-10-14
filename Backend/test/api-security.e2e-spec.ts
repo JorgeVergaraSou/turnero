@@ -179,6 +179,7 @@ describe('Seguridad de toda la API (e2e)', () => {
         [
           'GET /api/public/health-insurances',
           'GET /api/public/professionals',
+          'GET /api/public/privacy-notice',
           'GET /api/public/professionals/:id/availability',
           'GET /api/public/settings',
           'GET /api/public/specialties',

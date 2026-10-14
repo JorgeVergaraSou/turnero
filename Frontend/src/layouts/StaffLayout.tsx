@@ -28,6 +28,7 @@ const NAV: NavGroup[] = [
       { to: StaffPaths.AGENDA, label: 'Agenda' },
       { to: StaffPaths.NEW_APPOINTMENT, label: 'Dar turno' },
       { to: StaffPaths.PATIENTS, label: 'Pacientes' },
+      { to: StaffPaths.HISTORY_EXPORTS, label: 'Copias de historia clínica' },
     ],
   },
   {
@@ -36,6 +37,7 @@ const NAV: NavGroup[] = [
     links: [
       { to: StaffPaths.DOCTOR_HOME, label: 'Turnos de hoy', end: true },
       { to: StaffPaths.DOCTOR_PATIENTS, label: 'Mis pacientes' },
+      { to: StaffPaths.DOCTOR_HISTORY_EXPORTS, label: 'Copias de historia clínica' },
     ],
   },
   {

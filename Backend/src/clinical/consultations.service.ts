@@ -1,3 +1,4 @@
+import { AppointmentEntity } from '@/appointments/entities/appointment.entity';
 import {
   BadRequestException,
   ConflictException,
@@ -149,6 +150,11 @@ export class ConsultationsService {
         },
       );
 
+      this.appointmentsService.notifyAgendaChanged({
+        id: appointmentId,
+        professionalId: professional.id,
+        date: clinicNow().date,
+      });
       return toConsultationView(await this.loadFull(consultationId));
     } catch (error) {
       handleServiceError(
@@ -312,6 +318,7 @@ export class ConsultationsService {
    */
   async finalize(id: number, actor: Actor): Promise<ConsultationView> {
     try {
+      let attended = null as AppointmentEntity | null;
       await this.dataSource.transaction(async (manager) => {
         const locked = await this.lockEditableDraft(manager, id, actor);
         const consultation = await this.loadFull(id, manager);
@@ -347,6 +354,7 @@ export class ConsultationsService {
           AppointmentStatus.ATENDIDO,
           actor,
         );
+        attended = appointment;
 
         await this.auditService.record(
           {
@@ -360,6 +368,7 @@ export class ConsultationsService {
           manager,
         );
       });
+      if (attended) this.appointmentsService.notifyAgendaChanged(attended);
       return toConsultationView(await this.loadFull(id));
     } catch (error) {
       handleServiceError(

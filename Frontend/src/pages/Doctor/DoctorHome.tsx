@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { doctorApi } from '@/services';
 import { useAsync } from '@/hooks/useAsync';
+import { useAgendaStream } from '@/hooks/useAgendaStream';
 import type { Appointment, DoctorDashboard } from '@/interfaces';
 import { StaffPaths } from '@/models';
 import { CallPatientButton } from '@/components/CallPatientButton';
@@ -13,6 +14,8 @@ import { addDays, clinicToday, longDate, shortTime } from '@/utilities';
 
 /** Cuántos días hacia adelante muestra "Próximos turnos" (el backend admite hasta 31). */
 const UPCOMING_DAYS = 14;
+/** Refresco de respaldo del panel (el aviso en tiempo real es lo principal). */
+const REFRESH_MS = 60_000;
 
 /** "4 turnos: 3 por atender, 1 atendido (1 cancelado)": solo lo que hay, bien pluralizado. */
 function summarize(counts: DoctorDashboard['counts']): string {
@@ -41,11 +44,31 @@ export function DoctorHomePage() {
   const { settings } = useClinicSettings();
   const isToday = date === clinicToday();
 
+  // Se refresca solo: aviso en tiempo real cuando cambia un turno (por ejemplo,
+  // recepción marca que llegó un paciente), más un refresco cada minuto y al
+  // volver a la pestaña por si el aviso se perdió.
+  const reloadRef = useRef(dashboard.reload);
+  useLayoutEffect(() => {
+    reloadRef.current = dashboard.reload;
+  });
+  useAgendaStream('/doctor/agenda/stream', () => reloadRef.current());
+  useEffect(() => {
+    const id = setInterval(() => reloadRef.current(), REFRESH_MS);
+    const onVisible = () => document.visibilityState === 'visible' && reloadRef.current();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
   if (me.error) return <ErrorNotice message={me.error} />;
 
   const list = dashboard.data?.appointments ?? [];
   const inAttention = list.find((a) => a.status === 'EN_ATENCION');
-  const next = list.find((a) => ['RESERVADO', 'CONFIRMADO'].includes(a.status));
+  // quien ya llegó y espera va primero; si no hay nadie en sala, el próximo reservado
+  const next =
+    list.find((a) => a.status === 'CONFIRMADO') ?? list.find((a) => a.status === 'RESERVADO');
   const counts = dashboard.data?.counts;
 
   return (
@@ -89,6 +112,7 @@ export function DoctorHomePage() {
           <NextUp
             appointment={(inAttention ?? next)!}
             resuming={!!inAttention}
+            canCall={settings?.callsEnabled !== false}
             onAttend={(a) => navigate(StaffPaths.attention(a.id))}
           />
         )}
@@ -216,27 +240,47 @@ function UpcomingAppointments({
 function NextUp({
   appointment: a,
   resuming,
+  canCall,
   onAttend,
 }: {
   appointment: Appointment;
   resuming: boolean;
+  canCall: boolean;
   onAttend: (a: Appointment) => void;
 }) {
+  const arrived = a.status === 'CONFIRMADO';
+  const label = resuming ? 'Atención en curso' : arrived ? 'En sala de espera' : 'Próximo paciente';
   return (
     <section
-      aria-label={resuming ? 'Atención en curso' : 'Próximo paciente'}
+      aria-label={label}
       className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-(--radius-panel) bg-ink px-6 py-5 text-white"
     >
       <div>
-        <p className="text-white/70">{resuming ? 'Atención en curso' : 'Próximo paciente'}</p>
+        <p className="text-white/70">{label}</p>
         <p className="mt-1 text-2xl font-bold">
           <span className="font-mono tabular">{shortTime(a.startTime)}</span>{' '}
           {a.patient.firstName} {a.patient.lastName}
         </p>
+        {!resuming && !arrived && <p className="mt-1 text-white/70">Todavía no llegó.</p>}
       </div>
-      <Button size="lg" variant="secondary" onClick={() => onAttend(a)} className="border-transparent">
-        {resuming ? 'Volver a la atención' : 'Atender'}
-      </Button>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {resuming || arrived ? (
+          <>
+            {arrived && canCall && <CallPatientButton appointmentId={a.id} />}
+            <Button size="lg" variant="secondary" onClick={() => onAttend(a)} className="border-transparent">
+              {resuming ? 'Volver a la atención' : 'Atender'}
+            </Button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onAttend(a)}
+            className="text-sm text-white/80 underline underline-offset-2 hover:text-white"
+          >
+            Atender sin confirmar llegada
+          </button>
+        )}
+      </div>
     </section>
   );
 }
@@ -252,7 +296,6 @@ function AppointmentRow({
   canCall: boolean;
   onAttend: () => void;
 }) {
-  const pending = ['RESERVADO', 'CONFIRMADO'].includes(a.status);
   const done = ['CANCELADO', 'AUSENTE'].includes(a.status);
   return (
     <li className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5 ${done ? 'text-ink-faint' : ''}`}>
@@ -266,10 +309,22 @@ function AppointmentRow({
       <StatusBadge status={a.status} />
       <span className="flex min-w-40 flex-wrap items-center justify-end gap-2 text-right">
         {canCall && a.status === 'CONFIRMADO' && <CallPatientButton appointmentId={a.id} />}
-        {canAttend && pending && (
+        {canAttend && a.status === 'CONFIRMADO' && (
           <Button size="sm" onClick={onAttend}>
             Atender
           </Button>
+        )}
+        {canAttend && a.status === 'RESERVADO' && (
+          <span className="grid justify-items-end gap-0.5">
+            <span className="text-sm text-ink-soft">Todavía no llegó</span>
+            <button
+              type="button"
+              onClick={onAttend}
+              className="text-sm text-eucalyptus underline underline-offset-2"
+            >
+              Atender sin confirmar llegada
+            </button>
+          </span>
         )}
         {a.status === 'EN_ATENCION' && (
           <Button size="sm" variant="secondary" onClick={onAttend}>

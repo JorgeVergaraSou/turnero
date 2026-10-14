@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { adminApi, receptionApi } from '@/services';
 import { useAsync } from '@/hooks/useAsync';
+import { useAgendaStream } from '@/hooks/useAgendaStream';
 import type { Appointment, AppointmentStatus } from '@/interfaces';
 import { StaffPaths } from '@/models';
 import {
@@ -66,6 +67,9 @@ export function AgendaPage() {
       }),
     [date, professionalId],
   );
+
+  // se actualiza solo cuando cambia un turno (llegada, atención, cancelación…)
+  useAgendaStream('/admin/agenda/stream', agenda.reload);
 
   const rows = useMemo(
     () => (agenda.data ?? []).filter((a) => !statusFilter || a.status === statusFilter),

@@ -34,6 +34,7 @@ import {
   toPublicAppointmentView,
 } from './dto/appointment-view';
 import {
+  AgendaChangedPayload,
   AppointmentEvents,
   toAppointmentEventPayload,
 } from './appointment.events';
@@ -332,6 +333,7 @@ export class AppointmentsService {
 
       const appointment = await this.findEntity(appointmentId);
       this.emit(AppointmentEvents.CREATED, appointment);
+      this.notifyAgendaChanged(appointment);
       return appointment;
     } catch (error) {
       // la red de seguridad del índice único: otra reserva ganó el horario
@@ -638,6 +640,7 @@ export class AppointmentsService {
 
       const appointment = await this.findEntity(id);
       this.emit(AppointmentEvents.RESCHEDULED, appointment);
+      this.notifyAgendaChanged(appointment);
       return toAppointmentView(appointment);
     } catch (error) {
       if (isDuplicateEntry(error)) {
@@ -736,7 +739,7 @@ export class AppointmentsService {
     extraCheck?: (appointment: AppointmentEntity) => void,
   ): Promise<void> {
     try {
-      await this.dataSource.transaction(async (manager) => {
+      const changed = await this.dataSource.transaction(async (manager) => {
         const appointment = await this.lockAppointment(manager, id);
         extraCheck?.(appointment);
         await this.transitionInTransaction(
@@ -757,7 +760,9 @@ export class AppointmentsService {
           },
           manager,
         );
+        return appointment;
       });
+      this.notifyAgendaChanged(changed);
     } catch (error) {
       handleServiceError(
         error,
@@ -910,6 +915,27 @@ export class AppointmentsService {
       .innerJoinAndSelect('professional.user', 'professionalUser')
       .innerJoinAndSelect('appointment.specialty', 'specialty')
       .innerJoinAndSelect('appointment.office', 'office');
+  }
+
+  /**
+   * Avisa a los paneles abiertos (médico y recepción) que este turno cambió.
+   * Se llama DESPUÉS de confirmar la transacción. Nunca rompe la operación.
+   */
+  notifyAgendaChanged(
+    appointment: Pick<AppointmentEntity, 'id' | 'professionalId' | 'date'>,
+  ): void {
+    const payload: AgendaChangedPayload = {
+      appointmentId: appointment.id,
+      professionalId: appointment.professionalId,
+      date: appointment.date,
+    };
+    this.eventEmitter
+      .emitAsync(AppointmentEvents.AGENDA_CHANGED, payload)
+      .catch((error) =>
+        appointmentsErrorLogger.error(
+          `[AppointmentsService.notifyAgendaChanged] falló: ${error instanceof Error ? error.message : error}`,
+        ),
+      );
   }
 
   private emit(event: string, appointment: AppointmentEntity) {

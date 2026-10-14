@@ -17,7 +17,18 @@ export const AppointmentEvents = {
   IDENTITY_NOTICE: 'appointment.identity-notice',
   /** el médico llamó (o volvió a llamar) al paciente a su consultorio */
   CALLED: 'appointment.called',
+  /** algo cambió en la agenda (reserva, llegada, cancelación, atención…): los
+   * paneles abiertos se refrescan solos. Solo lleva ids, nada de datos personales */
+  AGENDA_CHANGED: 'appointment.agenda-changed',
 } as const;
+
+/** Qué turno cambió, para que los paneles abiertos recarguen. */
+export interface AgendaChangedPayload {
+  appointmentId: number;
+  professionalId: number;
+  /** fecha del turno ('YYYY-MM-DD') */
+  date: string;
+}
 
 /**
  * Payload del llamado. Lo consume la pantalla de sala: SOLO lo mínimo para

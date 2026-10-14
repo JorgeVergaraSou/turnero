@@ -10,7 +10,11 @@ import {
   Patch,
   Post,
   Query,
+  Sse,
+  MessageEvent,
 } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { AgendaStreamService } from '@/appointments/agenda-stream.service';
 import { ConsultationsService } from './consultations.service';
 import { AppointmentCallsService } from './appointment-calls.service';
 import { ClinicalAccessService } from './clinical-access.service';
@@ -41,6 +45,7 @@ export class DoctorController {
     private readonly clinicalAccess: ClinicalAccessService,
     private readonly appointmentsService: AppointmentsService,
     private readonly appointmentCallsService: AppointmentCallsService,
+    private readonly agendaStream: AgendaStreamService,
   ) {}
 
   @Get('me')
@@ -57,6 +62,20 @@ export class DoctorController {
         name,
       })),
     };
+  }
+
+  /**
+   * Avisos en tiempo real de cambios en SUS turnos (por ejemplo, recepción
+   * marcó que llegó un paciente): el panel se refresca solo. Solo ids.
+   * Filtrado por el profesional del token, nunca por un parámetro.
+   */
+  @Sse('agenda/stream')
+  @RequirePermissions(Permission.OWN_AGENDA_READ)
+  async agendaStream$(
+    @CurrentActor() actor: Actor,
+  ): Promise<Observable<MessageEvent>> {
+    const professional = await this.clinicalAccess.requireProfessional(actor);
+    return this.agendaStream.open(actor.userId!, professional.id);
   }
 
   /** Agenda propia. Siempre filtrada por el profesional del token. */

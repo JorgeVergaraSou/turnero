@@ -6,6 +6,8 @@ import { AppointmentsService } from './appointments.service';
 import { AvailabilityService } from './availability.service';
 import { AppointmentRemindersService } from './appointment-reminders.service';
 import { AppointmentRemindersScheduler } from './appointment-reminders.scheduler';
+import { AgendaStreamService } from './agenda-stream.service';
+import { AdminAgendaStreamController } from './agenda-stream.controller';
 import {
   AdminAppointmentsController,
   PublicAppointmentsController,
@@ -26,13 +28,22 @@ import { PrivacyModule } from '@/privacy/privacy.module';
     PatientsModule,
     PrivacyModule,
   ],
-  controllers: [PublicAppointmentsController, AdminAppointmentsController],
+  controllers: [
+    PublicAppointmentsController,
+    AdminAppointmentsController,
+    AdminAgendaStreamController,
+  ],
   providers: [
     AppointmentsService,
     AvailabilityService,
     AppointmentRemindersService,
     AppointmentRemindersScheduler,
+    AgendaStreamService,
   ],
-  exports: [AppointmentsService, AppointmentRemindersService],
+  exports: [
+    AppointmentsService,
+    AppointmentRemindersService,
+    AgendaStreamService,
+  ],
 })
 export class AppointmentsModule {}

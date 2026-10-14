@@ -7,6 +7,7 @@ import { StaffPaths } from '@/models';
 import { Button, ErrorNotice, PageHeader, Panel, Spinner, StatusBadge } from '@/components/ui';
 import { ContactMismatchBadge } from '@/components/ContactMismatch';
 import { HistoryExportsNotice } from '@/components/HistoryExportParts';
+import { useAgendaStream } from '@/hooks/useAgendaStream';
 import {
   EXCEPTION_LABEL,
   addDays,
@@ -62,6 +63,8 @@ export function ReceptionHomePage() {
     const id = setInterval(() => reloadRef.current(), REFRESH_MS);
     return () => clearInterval(id);
   }, []);
+  // además, aviso en tiempo real cuando cambia un turno (por ejemplo, el médico empieza una atención)
+  useAgendaStream('/admin/agenda/stream', () => reloadRef.current());
 
   const view = useMemo(() => {
     if (!data.data) return null;

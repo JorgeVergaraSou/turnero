@@ -12,6 +12,8 @@ import path from 'path';
  *   exfiltrarse a otro dominio vía fetch/XHR;
  * - style-src 'unsafe-inline': SweetAlert2 inyecta sus estilos en un
  *   <style>; el riesgo de CSS inline es bajo comparado con el de scripts.
+ * - font-src 'self': las tipografías se sirven desde el propio sitio
+ *   (@fontsource); no se le pide nada a Google.
  *
  * Solo en build: en desarrollo Vite inyecta scripts inline (HMR) que una
  * CSP estricta rompería. `frame-ancestors` no funciona en meta: si el
@@ -23,8 +25,8 @@ function contentSecurityPolicy(apiBaseUrl: string): Plugin {
   const policy = [
     "default-src 'self'",
     "script-src 'self'",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self'",
     `img-src 'self' data: ${apiOrigin}`,
     `connect-src 'self' ${apiOrigin}`,
     "object-src 'none'",

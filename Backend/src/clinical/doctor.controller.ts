@@ -13,6 +13,7 @@ import {
   Sse,
   MessageEvent,
 } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import { Observable } from 'rxjs';
 import { AgendaStreamService } from '@/appointments/agenda-stream.service';
 import { ConsultationsService } from './consultations.service';
@@ -136,14 +137,14 @@ export class DoctorController {
 
   @Get('patients/:id')
   @RequirePermissions(Permission.CLINICAL_READ)
-  patient(@Param('id', ParseIntPipe) id: number, @CurrentActor() actor: Actor) {
+  patient(@Param('id', ParseIdPipe) id: number, @CurrentActor() actor: Actor) {
     return this.consultationsService.getPatient(id, actor);
   }
 
   @Get('patients/:id/clinical-history')
   @RequirePermissions(Permission.CLINICAL_READ)
   clinicalHistory(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @CurrentActor() actor: Actor,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
@@ -162,7 +163,7 @@ export class DoctorController {
     Permission.CONSULTATIONS_ATTEND,
     Permission.CLINICAL_WRITE,
   )
-  start(@Param('id', ParseIntPipe) id: number, @CurrentActor() actor: Actor) {
+  start(@Param('id', ParseIdPipe) id: number, @CurrentActor() actor: Actor) {
     return this.consultationsService.startAttention(id, actor);
   }
 
@@ -173,14 +174,14 @@ export class DoctorController {
   @Post('appointments/:id/call')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(Permission.CALLS_MAKE)
-  call(@Param('id', ParseIntPipe) id: number, @CurrentActor() actor: Actor) {
+  call(@Param('id', ParseIdPipe) id: number, @CurrentActor() actor: Actor) {
     return this.appointmentCallsService.call(id, actor);
   }
 
   @Get('appointments/:id/consultation')
   @RequirePermissions(Permission.CLINICAL_READ)
   consultationOfAppointment(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @CurrentActor() actor: Actor,
   ) {
     return this.consultationsService.findByAppointment(id, actor);
@@ -189,7 +190,7 @@ export class DoctorController {
   @Get('consultations/:id')
   @RequirePermissions(Permission.CLINICAL_READ)
   consultation(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @CurrentActor() actor: Actor,
   ) {
     return this.consultationsService.findOne(id, actor);
@@ -198,7 +199,7 @@ export class DoctorController {
   @Patch('consultations/:id')
   @RequirePermissions(Permission.CLINICAL_WRITE)
   updateDraft(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: UpdateConsultationDto,
     @CurrentActor() actor: Actor,
   ) {
@@ -211,17 +212,14 @@ export class DoctorController {
     Permission.CONSULTATIONS_ATTEND,
     Permission.CLINICAL_WRITE,
   )
-  finalize(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentActor() actor: Actor,
-  ) {
+  finalize(@Param('id', ParseIdPipe) id: number, @CurrentActor() actor: Actor) {
     return this.consultationsService.finalize(id, actor);
   }
 
   @Post('consultations/:id/amendments')
   @RequirePermissions(Permission.CLINICAL_WRITE)
   amend(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: CreateAmendmentDto,
     @CurrentActor() actor: Actor,
   ) {

@@ -1,12 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import { OfficesService } from './offices.service';
 import { CreateOfficeDto, UpdateOfficeDto } from './dto/office.dto';
 import { RequirePermissions } from '@/auth/decorators/require-permissions.decorator';
@@ -34,7 +27,7 @@ export class AdminOfficesController {
   @Patch(':id')
   @RequirePermissions(Permission.OFFICES_MANAGE)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: UpdateOfficeDto,
     @CurrentActor() actor: Actor,
   ) {

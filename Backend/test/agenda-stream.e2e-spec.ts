@@ -27,6 +27,10 @@ import {
   AppointmentStatus,
 } from '../src/appointments/appointment-status';
 import { generateAppointmentCode } from '../src/appointments/appointment-code.util';
+import {
+  AgendaStreamService,
+  MAX_AGENDA_STREAMS_PER_USER,
+} from '../src/appointments/agenda-stream.service';
 
 interface Received {
   event: string;
@@ -326,5 +330,41 @@ describe('Avisos de cambios en la agenda (e2e)', () => {
       .expect(200);
     await until(() => tabs.every((t) => t.changes().length > 0));
     tabs.forEach((t) => expect(t.changes()).toHaveLength(1));
+  });
+
+  describe('recursos', () => {
+    const openConnections = () =>
+      [...(app.get(AgendaStreamService) as any).connections.values()].reduce(
+        (sum: number, set: Set<unknown>) => sum + set.size,
+        0,
+      );
+
+    it('un usuario con muchas pestañas abiertas no pasa el tope: la más vieja se cierra', async () => {
+      const streams = Array.from(
+        { length: MAX_AGENDA_STREAMS_PER_USER + 5 },
+        () => open('/doctor/agenda/stream', clinicA.doctor.token),
+      );
+      await Promise.all(streams.map((s) => s.ready));
+      await until(() =>
+        streams.every((s) => s.received.some((r) => r.event === 'ready')),
+      );
+      await sleep(300);
+      expect(openConnections()).toBeLessThanOrEqual(
+        MAX_AGENDA_STREAMS_PER_USER,
+      );
+    });
+
+    it('al cerrar todas las conexiones no queda ninguna registrada (sin fugas)', async () => {
+      const streams = Array.from({ length: 12 }, (_, i) =>
+        open('/admin/agenda/stream', i % 2 ? reception.token : admin.token),
+      );
+      await Promise.all(streams.map((s) => s.ready));
+      await until(() =>
+        streams.every((s) => s.received.some((r) => r.event === 'ready')),
+      );
+      opened.splice(0).forEach((s) => s.close());
+      await until(() => openConnections() === 0, 5000);
+      expect(openConnections()).toBe(0);
+    });
   });
 });

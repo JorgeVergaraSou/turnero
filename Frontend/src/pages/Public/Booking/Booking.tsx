@@ -610,19 +610,20 @@ function PatientStep({
     <form onSubmit={submit} noValidate className="grid gap-4">
       {privacy.data && <PrivacyNoticeBox notice={privacy.data} />}
       <div className="grid gap-4 sm:grid-cols-2">
-        <TextInput label="Nombre" autoComplete="given-name" value={value.firstName} onChange={set('firstName')} error={errors.firstName} />
-        <TextInput label="Apellido" autoComplete="family-name" value={value.lastName} onChange={set('lastName')} error={errors.lastName} />
+        <TextInput label="Nombre" autoComplete="given-name" maxLength={80} value={value.firstName} onChange={set('firstName')} error={errors.firstName} />
+        <TextInput label="Apellido" autoComplete="family-name" maxLength={80} value={value.lastName} onChange={set('lastName')} error={errors.lastName} />
       </div>
       <TextInput
         label="DNI"
         inputMode="numeric"
+        maxLength={20}
         className="font-mono tabular"
         value={value.documentNumber}
         onChange={set('documentNumber')}
         error={errors.documentNumber}
         hint="Lo vas a necesitar, junto con el código, para consultar o cancelar el turno."
       />
-      <TextInput label="Teléfono" type="tel" autoComplete="tel" value={value.phone} onChange={set('phone')} error={errors.phone} />
+      <TextInput label="Teléfono" type="tel" autoComplete="tel" maxLength={30} value={value.phone} onChange={set('phone')} error={errors.phone} />
       {insurances.error ? (
         <ErrorNotice message={insurances.error} onRetry={insurances.reload} />
       ) : (
@@ -650,6 +651,7 @@ function PatientStep({
         label="Email (opcional)"
         type="email"
         autoComplete="email"
+        maxLength={150}
         value={value.email ?? ''}
         onChange={set('email')}
         error={errors.email}

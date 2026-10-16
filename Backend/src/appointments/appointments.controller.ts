@@ -5,12 +5,12 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AppointmentsService } from './appointments.service';
 import {
@@ -43,7 +43,7 @@ export class PublicAppointmentsController {
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @Get('professionals/:id/availability')
   availability(
-    @Param('id', ParseIntPipe) professionalId: number,
+    @Param('id', ParseIdPipe) professionalId: number,
     @Query('from', RequiredDatePipe) from: string,
     @Query('to', RequiredDatePipe) to: string,
   ) {
@@ -120,7 +120,7 @@ export class AdminAppointmentsController {
 
   @Get(':id')
   @RequirePermissions(Permission.APPOINTMENTS_READ)
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseIdPipe) id: number) {
     return this.appointmentsService.findOneWithHistory(id);
   }
 
@@ -133,7 +133,7 @@ export class AdminAppointmentsController {
   @Post(':id/confirm')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(Permission.APPOINTMENTS_MANAGE)
-  confirm(@Param('id', ParseIntPipe) id: number, @CurrentActor() actor: Actor) {
+  confirm(@Param('id', ParseIdPipe) id: number, @CurrentActor() actor: Actor) {
     return this.appointmentsService.confirm(id, actor);
   }
 
@@ -141,7 +141,7 @@ export class AdminAppointmentsController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(Permission.APPOINTMENTS_MANAGE)
   cancel(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: CancelAppointmentDto,
     @CurrentActor() actor: Actor,
   ) {
@@ -151,14 +151,14 @@ export class AdminAppointmentsController {
   @Post(':id/no-show')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(Permission.APPOINTMENTS_MANAGE)
-  noShow(@Param('id', ParseIntPipe) id: number, @CurrentActor() actor: Actor) {
+  noShow(@Param('id', ParseIdPipe) id: number, @CurrentActor() actor: Actor) {
     return this.appointmentsService.markNoShow(id, actor);
   }
 
   @Patch(':id/reschedule')
   @RequirePermissions(Permission.APPOINTMENTS_MANAGE)
   reschedule(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: RescheduleAppointmentDto,
     @CurrentActor() actor: Actor,
   ) {

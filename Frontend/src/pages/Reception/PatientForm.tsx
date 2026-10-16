@@ -88,8 +88,8 @@ export function PatientFormModal({
     >
       <form id="patient-form" onSubmit={save} className="grid gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextInput label="Nombre" required value={form.firstName} onChange={set('firstName')} />
-          <TextInput label="Apellido" required value={form.lastName} onChange={set('lastName')} />
+          <TextInput label="Nombre" required maxLength={80} value={form.firstName} onChange={set('firstName')} />
+          <TextInput label="Apellido" required maxLength={80} value={form.lastName} onChange={set('lastName')} />
           <TextInput
             label="DNI"
             required
@@ -98,8 +98,8 @@ export function PatientFormModal({
             onChange={set('documentNumber')}
           />
           <TextInput label="Fecha de nacimiento" type="date" value={form.birthDate ?? ''} onChange={set('birthDate')} />
-          <TextInput label="Teléfono" type="tel" required value={form.phone} onChange={set('phone')} />
-          <TextInput label="Email" type="email" value={form.email ?? ''} onChange={set('email')} />
+          <TextInput label="Teléfono" type="tel" required maxLength={30} value={form.phone} onChange={set('phone')} />
+          <TextInput label="Email" type="email" maxLength={150} value={form.email ?? ''} onChange={set('email')} />
           {insurances.error ? (
             <ErrorNotice message={insurances.error} onRetry={insurances.reload} />
           ) : (

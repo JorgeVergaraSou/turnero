@@ -155,50 +155,64 @@ export class HistoryExportsService {
       await this.assertAssignable(dto.assignedProfessionalId, dto.patientId);
 
       const now = new Date();
-      const saved = await this.dataSource.transaction(async (manager) => {
-        // un solo pedido en curso por paciente (evita duplicados por doble clic)
-        const open = await manager
-          .getRepository(HistoryExportRequestEntity)
-          .findOne({
-            where: { patientId: dto.patientId, status: In([...OPEN_STATUSES]) },
-            lock: { mode: 'pessimistic_write' },
-          });
-        if (open) throw new ConflictException(ALREADY_OPEN_MESSAGE);
+      const saved = await this.dataSource.transaction(
+        'READ COMMITTED',
+        async (manager) => {
+          // un solo pedido en curso por paciente (evita duplicados por doble clic).
+          // Se serializa bloqueando la fila del PACIENTE (existe y es estable): antes
+          // se bloqueaba "el pedido abierto", que si no existe es un bloqueo de
+          // rango, y varios pedidos juntos terminaban en deadlock (500).
+          await manager
+            .getRepository(PatientEntity)
+            .createQueryBuilder('patient')
+            .setLock('pessimistic_write')
+            .where('patient.id = :id', { id: dto.patientId })
+            .getOne();
+          const open = await manager
+            .getRepository(HistoryExportRequestEntity)
+            .findOne({
+              where: {
+                patientId: dto.patientId,
+                status: In([...OPEN_STATUSES]),
+              },
+            });
+          if (open) throw new ConflictException(ALREADY_OPEN_MESSAGE);
 
-        const isRep = dto.requesterType === RequesterType.REPRESENTANTE;
-        const request = await manager.save(
-          manager.getRepository(HistoryExportRequestEntity).create({
-            patientId: dto.patientId,
-            requesterType: dto.requesterType,
-            requesterName: isRep ? (dto.requesterName ?? null) : null,
-            requesterDocument: isRep ? (dto.requesterDocument ?? null) : null,
-            requesterRelationship: isRep
-              ? (dto.requesterRelationship ?? null)
-              : null,
-            identityChecked: true,
-            requestedByUserId: actor.userId!,
-            assignedProfessionalId: dto.assignedProfessionalId,
-            status: HistoryExportStatus.PENDIENTE,
-            requestedAt: now,
-            dueAt: new Date(now.getTime() + EXPORT_DEADLINE_HOURS * HOUR_MS),
-          }),
-        );
-        await this.auditService.record(
-          {
-            actor,
-            action: AuditAction.HISTORY_EXPORT_REQUEST,
-            resourceType: 'history_export_request',
-            resourceId: request.id,
-            patientId: dto.patientId,
-            metadata: {
+          const isRep = dto.requesterType === RequesterType.REPRESENTANTE;
+          const request = await manager.save(
+            manager.getRepository(HistoryExportRequestEntity).create({
+              patientId: dto.patientId,
               requesterType: dto.requesterType,
+              requesterName: isRep ? (dto.requesterName ?? null) : null,
+              requesterDocument: isRep ? (dto.requesterDocument ?? null) : null,
+              requesterRelationship: isRep
+                ? (dto.requesterRelationship ?? null)
+                : null,
+              identityChecked: true,
+              requestedByUserId: actor.userId!,
               assignedProfessionalId: dto.assignedProfessionalId,
+              status: HistoryExportStatus.PENDIENTE,
+              requestedAt: now,
+              dueAt: new Date(now.getTime() + EXPORT_DEADLINE_HOURS * HOUR_MS),
+            }),
+          );
+          await this.auditService.record(
+            {
+              actor,
+              action: AuditAction.HISTORY_EXPORT_REQUEST,
+              resourceType: 'history_export_request',
+              resourceId: request.id,
+              patientId: dto.patientId,
+              metadata: {
+                requesterType: dto.requesterType,
+                assignedProfessionalId: dto.assignedProfessionalId,
+              },
             },
-          },
-          manager,
-        );
-        return request;
-      });
+            manager,
+          );
+          return request;
+        },
+      );
       return (await this.viewsByIds([saved.id]))[0];
     } catch (error) {
       handleServiceError(

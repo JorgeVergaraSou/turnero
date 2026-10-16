@@ -9,6 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import { PatientsService } from './patients.service';
 import { CreatePatientDto, UpdatePatientDto } from './dto/patient.dto';
 import { RequirePermissions } from '@/auth/decorators/require-permissions.decorator';
@@ -40,7 +41,7 @@ export class AdminPatientsController {
 
   @Get(':id')
   @RequirePermissions(Permission.PATIENTS_READ)
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseIdPipe) id: number) {
     return this.patientsService.findOne(id);
   }
 
@@ -53,7 +54,7 @@ export class AdminPatientsController {
   @Patch(':id')
   @RequirePermissions(Permission.PATIENTS_WRITE)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: UpdatePatientDto,
     @CurrentActor() actor: Actor,
   ) {

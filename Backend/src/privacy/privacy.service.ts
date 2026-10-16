@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { PrivacyNoticeEntity } from './entities/privacy-notice.entity';
 import {
   ConsentChannel,
@@ -47,6 +47,7 @@ export class PrivacyService {
     @InjectRepository(PrivacyNoticeEntity)
     private readonly notices: Repository<PrivacyNoticeEntity>,
     private readonly auditService: AuditService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /** La versión vigente es la más alta. Nunca se cachea: un cambio rige al instante. */
@@ -161,34 +162,56 @@ export class PrivacyService {
     actor: Actor,
   ): Promise<PublicPrivacyNotice> {
     try {
-      const current = await this.getCurrentEntity();
       const contentHash = computeNoticeHash(dto.summary, dto.policy);
-      if (
-        current.contentHash === contentHash &&
-        current.isDraft === dto.isDraft
-      ) {
-        // no se crea una versión idéntica: obligaría a todos a aceptar de nuevo sin motivo
-        throw new ConflictException(
-          'No hay cambios respecto de la versión vigente.',
-        );
-      }
-      const saved = await this.notices.save(
-        this.notices.create({
-          summary: dto.summary,
-          policy: dto.policy,
-          isDraft: dto.isDraft,
-          contentHash,
-          createdByUserId: actor.userId,
-          createdAt: new Date(),
-        }),
+      // Una publicación por vez: se bloquea una fila estable (la configuración
+      // del consultorio) y recién ahí se lee la versión vigente. Sin esto, dos
+      // publicaciones simultáneas del mismo texto veían la misma "vigente" y
+      // creaban dos versiones idénticas (y la constancia de cada paciente
+      // apunta a una versión).
+      const saved = await this.dataSource.transaction(
+        'READ COMMITTED',
+        async (manager) => {
+          await manager.query(
+            'SELECT id FROM clinic_settings WHERE id = 1 FOR UPDATE',
+          );
+          const repository = manager.getRepository(PrivacyNoticeEntity);
+          const current = await repository.findOne({
+            where: {},
+            order: { version: 'DESC' },
+          });
+          if (
+            current &&
+            current.contentHash === contentHash &&
+            current.isDraft === dto.isDraft
+          ) {
+            // no se crea una versión idéntica: obligaría a todos a aceptar de nuevo sin motivo
+            throw new ConflictException(
+              'No hay cambios respecto de la versión vigente.',
+            );
+          }
+          const created = await repository.save(
+            repository.create({
+              summary: dto.summary,
+              policy: dto.policy,
+              isDraft: dto.isDraft,
+              contentHash,
+              createdByUserId: actor.userId,
+              createdAt: new Date(),
+            }),
+          );
+          await this.auditService.record(
+            {
+              actor,
+              action: AuditAction.PRIVACY_NOTICE_PUBLISH,
+              resourceType: 'privacy_notice',
+              resourceId: created.version,
+              metadata: { isDraft: dto.isDraft },
+            },
+            manager,
+          );
+          return created;
+        },
       );
-      await this.auditService.record({
-        actor,
-        action: AuditAction.PRIVACY_NOTICE_PUBLISH,
-        resourceType: 'privacy_notice',
-        resourceId: saved.version,
-        metadata: { isDraft: dto.isDraft },
-      });
       return toPublic(saved);
     } catch (error) {
       handleServiceError(

@@ -3,11 +3,11 @@ import {
   Controller,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
 } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import { ProfessionalsService } from './professionals.service';
 import {
   CreateProfessionalDto,
@@ -40,7 +40,7 @@ export class AdminProfessionalsController {
 
   @Get(':id')
   @RequirePermissions(Permission.SCHEDULES_READ)
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseIdPipe) id: number) {
     return this.professionalsService.findOne(id);
   }
 
@@ -53,7 +53,7 @@ export class AdminProfessionalsController {
   @Patch(':id')
   @RequirePermissions(Permission.PROFESSIONALS_MANAGE)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: UpdateProfessionalDto,
     @CurrentActor() actor: Actor,
   ) {

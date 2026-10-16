@@ -202,6 +202,7 @@ describe('Seguridad de toda la API (e2e)', () => {
         .sort();
       expect(publicRoutes).toEqual(
         [
+          'GET /api/health',
           'GET /api/public/health-insurances',
           'GET /api/public/professionals',
           'GET /api/public/privacy-notice',

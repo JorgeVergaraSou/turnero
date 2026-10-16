@@ -7,6 +7,18 @@ import { Actor } from '@/common/interfaces/actor.interface';
 import { handleServiceError } from '@/common/utils/error-handler.util';
 import { auditErrorLogger } from '@/config/module-loggers';
 
+/**
+ * patient_id es `int unsigned`: un id que no entra (por ejemplo 99999999999999999999
+ * o -1 en una URL inventada) hacía fallar el INSERT y, con él, la operación
+ * completa (500) sin dejar registro. Un id imposible no pertenece a ningún
+ * paciente: se guarda sin paciente.
+ */
+function validPatientId(id: number | null | undefined): number | null {
+  return Number.isSafeInteger(id) && id! >= 1 && id! <= 4_294_967_295
+    ? id!
+    : null;
+}
+
 export interface AuditEntry {
   actor: Actor;
   action: AuditAction;
@@ -48,7 +60,7 @@ export class AuditService {
             entry.resourceId === undefined || entry.resourceId === null
               ? null
               : String(entry.resourceId),
-          patientId: entry.patientId ?? null,
+          patientId: validPatientId(entry.patientId),
           result: entry.result ?? AuditResult.SUCCESS,
           reason: entry.reason ?? null,
           metadata: entry.metadata ?? null,

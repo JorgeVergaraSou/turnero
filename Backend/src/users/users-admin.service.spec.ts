@@ -37,16 +37,44 @@ function build(overrides: {
     activarUsuario: jest.fn(),
   };
   const auditService = { record: jest.fn() };
+  // el candado de MySQL (GET_LOCK) siempre se obtiene; se prueba aparte en los e2e
+  const queryRunner = {
+    connect: jest.fn(),
+    release: jest.fn(),
+    query: jest.fn().mockResolvedValue([{ acquired: 1 }]),
+  };
+  const dataSource = { createQueryRunner: () => queryRunner };
   const service = new UsersAdminService(
     userRepository as any,
     professionalRepository as any,
     usersService as any,
     auditService as any,
+    dataSource as any,
   );
-  return { service, userRepository, usersService, auditService };
+  return { service, userRepository, usersService, auditService, queryRunner };
 }
 
 describe('UsersAdminService', () => {
+  it('dar de baja pide el candado de administradores y lo suelta, aunque falle', async () => {
+    const { service, queryRunner } = build({ otherActiveAdmins: 0 });
+    await expect(service.deactivate(2, actor)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    const sql = queryRunner.query.mock.calls.map((c: any[]) => c[0] as string);
+    expect(sql[0]).toMatch(/GET_LOCK/);
+    expect(sql[sql.length - 1]).toMatch(/RELEASE_LOCK/);
+    expect(queryRunner.release).toHaveBeenCalled();
+  });
+
+  it('si no consigue el candado no toca nada y avisa', async () => {
+    const { service, queryRunner, usersService } = build({});
+    queryRunner.query.mockResolvedValueOnce([{ acquired: 0 }]);
+    await expect(service.deactivate(2, actor)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(usersService.darDeBajaUsuario).not.toHaveBeenCalled();
+  });
+
   it('no permite degradar al último ADMIN activo', async () => {
     const { service, userRepository } = build({ otherActiveAdmins: 0 });
 

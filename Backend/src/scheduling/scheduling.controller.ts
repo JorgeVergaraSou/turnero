@@ -3,11 +3,11 @@ import {
   Controller,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
 } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import { SchedulingService } from './scheduling.service';
 import {
   CreateScheduleDto,
@@ -42,7 +42,7 @@ export class AdminSchedulesController {
   @Patch(':id')
   @RequirePermissions(Permission.SCHEDULES_MANAGE)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: UpdateScheduleDto,
     @CurrentActor() actor: Actor,
   ) {
@@ -76,7 +76,7 @@ export class AdminScheduleExceptionsController {
   @Patch(':id')
   @RequirePermissions(Permission.SCHEDULES_MANAGE)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: UpdateScheduleExceptionDto,
     @CurrentActor() actor: Actor,
   ) {

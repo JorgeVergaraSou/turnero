@@ -1,6 +1,12 @@
 //src/app.module.ts
-import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
+import { APP_GUARD, APP_PIPE } from '@nestjs/core';
+import { ObjectBodyPipe } from './common/pipes/object-body.pipe';
 import { AuthModule } from './auth/auth.module';
 import { AuditModule } from './audit/audit.module';
 import { SettingsModule } from './settings/settings.module';
@@ -23,7 +29,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './config/winston.config';
 import { buildDatabaseOptions } from './config/database.config';
+import { initializeWithClinicTimeZone } from './config/database-session';
 import { AppService } from './app.service';
+import { HealthController } from './health/health.controller';
+import { noStore } from './common/middleware/no-store.middleware';
 import { ThrottlerModule } from '@nestjs/throttler';
 import * as Joi from 'joi';
 
@@ -42,6 +51,9 @@ import * as Joi from 'joi';
         DB_PASSWORD: Joi.string().allow('').required(),
         DB_NAME: Joi.string().required(),
         SECRET_WORD: Joi.string().min(16).required(),
+        // clave que cifra los secretos de 2FA y los tokens de pantallas; si no
+        // está se deriva de SECRET_WORD (cambiarla invalida lo ya cifrado)
+        TWO_FACTOR_KEY: Joi.string().min(16).allow('').optional(),
         MAIL_HOST: Joi.string().default('smtp.gmail.com'),
         MAIL_PORT: Joi.number().default(465),
         MAIL_USER: Joi.string().allow('').optional(),
@@ -52,6 +64,11 @@ import * as Joi from 'joi';
         TRUST_PROXY: Joi.string().allow('').optional(),
         DISABLE_SCHEDULED_JOBS: Joi.string()
           .valid('true', 'false', '')
+          .optional(),
+        // duración de la sesión (ej. '3h', '8h', '12h', '1d'); por defecto 3 horas
+        JWT_EXPIRES_IN: Joi.string()
+          .pattern(/^\d{1,3}[mhd]$/)
+          .allow('')
           .optional(),
         PORT: Joi.number().default(3006),
         SEED_ADMIN_NICK: Joi.string().allow('').optional(),
@@ -100,6 +117,9 @@ import * as Joi from 'joi';
           autoLoadEntities: true,
         };
       },
+      // cada conexión usa la hora del consultorio, aunque el servidor esté en UTC
+      dataSourceFactory: async (options) =>
+        initializeWithClinicTimeZone(options!),
       inject: [ConfigService],
     }),
     // eventos de dominio (turnos → notificaciones), ver appointment.events.ts
@@ -121,7 +141,7 @@ import * as Joi from 'joi';
     DisplaysModule,
     PrivacyModule,
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [
     AppService,
     // "Cerrado por defecto": todo endpoint exige token salvo que esté
@@ -129,6 +149,15 @@ import * as Joi from 'joi';
     // cerrado en vez de abierto. La restricción por ROL sigue siendo
     // explícita con @Auth(...roles) — RolesGuard no es global.
     { provide: APP_GUARD, useClass: AuthGuard },
+    // un cuerpo que es una lista donde se espera un objeto → 400 (antes, 500)
+    { provide: APP_PIPE, useClass: ObjectBodyPipe },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // ninguna respuesta de la API se guarda en cachés (datos de salud)
+    consumer
+      .apply(noStore)
+      .forRoutes({ path: '{*splat}', method: RequestMethod.ALL });
+  }
+}

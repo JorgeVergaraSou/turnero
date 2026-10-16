@@ -18,7 +18,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('SECRET_WORD'), // Obtiene SECRET_WORD desde las variables de entorno
-        signOptions: { expiresIn: '3h' },
+        // duración de la sesión: JWT_EXPIRES_IN (ej. '8h'); por defecto 3 horas
+        signOptions: {
+          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
+            '3h') as any,
+        },
       }),
       inject: [ConfigService],
       global: true,

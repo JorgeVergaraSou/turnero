@@ -5,13 +5,13 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
   Res,
   StreamableFile,
 } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import type { Response } from 'express';
 import { HistoryExportsService } from './history-exports.service';
 import {
@@ -52,7 +52,7 @@ export class AdminHistoryExportsController {
   /** Médicos que atendieron al paciente (los únicos que pueden emitir su copia). */
   @Get('candidates')
   @RequirePermissions(Permission.HISTORY_EXPORT_TRACK)
-  candidates(@Query('patientId', ParseIntPipe) patientId: number) {
+  candidates(@Query('patientId', ParseIdPipe) patientId: number) {
     return this.service.candidates(patientId);
   }
 
@@ -66,7 +66,7 @@ export class AdminHistoryExportsController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(Permission.HISTORY_EXPORT_REQUEST)
   cancel(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: CancelHistoryExportDto,
     @CurrentActor() actor: Actor,
   ) {
@@ -76,7 +76,7 @@ export class AdminHistoryExportsController {
   @Patch(':id/reassign')
   @RequirePermissions(Permission.HISTORY_EXPORT_REASSIGN)
   reassign(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: ReassignHistoryExportDto,
     @CurrentActor() actor: Actor,
   ) {
@@ -115,7 +115,7 @@ export class DoctorHistoryExportsController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(Permission.HISTORY_EXPORT_ISSUE)
   async issue(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() _dto: IssueHistoryExportDto,
     @CurrentActor() actor: Actor,
     @Res({ passthrough: true }) res: Response,
@@ -133,7 +133,7 @@ export class DoctorHistoryExportsController {
   @Post(':id/deliver')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(Permission.HISTORY_EXPORT_ISSUE)
-  deliver(@Param('id', ParseIntPipe) id: number, @CurrentActor() actor: Actor) {
+  deliver(@Param('id', ParseIdPipe) id: number, @CurrentActor() actor: Actor) {
     return this.service.deliver(id, actor);
   }
 }

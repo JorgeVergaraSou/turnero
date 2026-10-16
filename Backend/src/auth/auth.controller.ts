@@ -9,12 +9,12 @@ import {
   Post,
   Patch,
   Param,
-  ParseIntPipe,
   Delete,
   UseGuards,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { LoginDto } from './dto/login.dto';
@@ -126,7 +126,7 @@ export class AuthController {
   @Auth(Role.RECEPCIONISTA, Role.MEDICO)
   @Patch('/updateUser/:id')
   async updateUser(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
     @ActiveUser() user: UserActiveInterface,
     @CurrentActor() actor: Actor,
@@ -206,7 +206,7 @@ export class AuthController {
   @Delete('dar-de-baja-usuario/:id')
   @Auth(Role.ADMIN)
   async deleteUser(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @CurrentActor() actor: Actor,
   ): Promise<void> {
     return this.usersAdminService.deactivate(id, actor);
@@ -215,7 +215,7 @@ export class AuthController {
   @Patch('activar-usuario/:id')
   @Auth(Role.ADMIN)
   async activarUsuario(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @CurrentActor() actor: Actor,
   ): Promise<void> {
     return this.usersAdminService.activate(id, actor);
@@ -225,7 +225,7 @@ export class AuthController {
   @Patch('reiniciar-2fa/:id')
   @Auth(Role.ADMIN)
   async reiniciarDosPasos(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @CurrentActor() actor: Actor,
   ): Promise<void> {
     return this.twoFactorService.reset(id, actor);
@@ -234,7 +234,7 @@ export class AuthController {
   @Patch('desbloquear-usuario/:id')
   @Auth(Role.ADMIN)
   async desbloquearUsuario(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @CurrentActor() actor: Actor,
   ): Promise<void> {
     return this.usersAdminService.unlock(id, actor);
@@ -243,7 +243,7 @@ export class AuthController {
   @Patch('editar-usuario/:id')
   @Auth(Role.ADMIN)
   async editarUsuario(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: AdminUpdateUserDto,
     @CurrentActor() actor: Actor,
   ): Promise<void> {
@@ -253,7 +253,7 @@ export class AuthController {
   @Post('restablecer-clave/:id')
   @Auth(Role.ADMIN)
   async restablecerClave(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: AdminResetPasswordDto,
     @CurrentActor() actor: Actor,
   ): Promise<void> {

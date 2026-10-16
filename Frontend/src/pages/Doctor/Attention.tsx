@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
@@ -159,6 +159,9 @@ export function AttentionPage() {
   );
 }
 
+/** Cuánto después de la última edición se guarda solo el borrador. */
+const AUTOSAVE_MS = 30_000;
+
 function AttentionWorkspace({
   initial,
   myProfessionalId,
@@ -175,18 +178,24 @@ function AttentionWorkspace({
   const patient = useAsync(() => doctorApi.patient(initial.patientId), [initial.patientId]);
   const finalized = consultation.status === 'FINALIZADA';
 
+  // cuenta las ediciones: si se sigue escribiendo mientras un guardado está en
+  // camino, al terminar NO hay que dar el borrador por guardado (quedan cambios)
+  const edits = useRef(0);
+
   const update = (fn: (d: Draft) => Draft) => {
+    edits.current += 1;
     setDraft(fn);
     setDirty(true);
   };
 
   const save = useCallback(async (): Promise<boolean> => {
+    const editsAtStart = edits.current;
     setSaving(true);
     setError('');
     try {
       const saved = await doctorApi.saveDraft(consultation.id, toPayload(draft));
       setConsultation(saved);
-      setDirty(false);
+      if (edits.current === editsAtStart) setDirty(false);
       setSavedAt(shortTime(clinicTime()));
       return true;
     } catch (err) {
@@ -196,6 +205,16 @@ function AttentionWorkspace({
       setSaving(false);
     }
   }, [consultation.id, draft]);
+
+  // Guardado automático: AUTOSAVE_MS después de la última edición. Así, si la
+  // sesión vence o se corta la red, no se pierde lo que se venía escribiendo.
+  useEffect(() => {
+    if (finalized || !dirty || saving) return;
+    const timer = setTimeout(() => {
+      void save();
+    }, AUTOSAVE_MS);
+    return () => clearTimeout(timer);
+  }, [finalized, dirty, saving, save]);
 
   // Ctrl/Cmd + S guarda el borrador
   useEffect(() => {
@@ -317,7 +336,7 @@ function AttentionWorkspace({
             {error && <p role="alert" className="mr-auto text-st-cancelled">{error}</p>}
             {!error && (
               <p className="mr-auto text-sm text-ink-soft" aria-live="polite">
-                {dirty ? 'Cambios sin guardar (Ctrl+S para guardar)' : savedAt ? `Borrador guardado a las ${savedAt}` : 'Borrador'}
+                {dirty ? 'Cambios sin guardar (se guardan solos en unos segundos; o Ctrl+S)' : savedAt ? `Borrador guardado a las ${savedAt}` : 'Borrador'}
               </p>
             )}
             <Button variant="secondary" onClick={save} loading={saving && dirty} disabled={!dirty}>

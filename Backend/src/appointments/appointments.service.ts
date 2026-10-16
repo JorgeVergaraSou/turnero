@@ -262,7 +262,12 @@ export class AppointmentsService {
     await this.assertBookableDate(request.date, startTime);
 
     try {
+      // READ COMMITTED: cada consulta ve lo último confirmado. Con el nivel por
+      // defecto (REPEATABLE READ) la "foto" se toma en la primera lectura, así
+      // que dos reservas del mismo paciente con médicos distintos no veían la
+      // del otro y se pasaban del límite de turnos pendientes o se solapaban.
       const appointmentId = await this.dataSource.transaction(
+        'READ COMMITTED',
         async (manager) => {
           await this.professionalsService.lockForBooking(
             manager,
@@ -286,6 +291,8 @@ export class AppointmentsService {
           }
 
           const patient = await request.resolvePatient(manager);
+          // una reserva por vez por paciente (orden de locks: profesional → paciente)
+          await this.lockPatient(manager, patient.id);
           await this.assertPatientFree(manager, patient.id, slot);
           await request.beforeInsert?.(manager, patient);
 
@@ -651,7 +658,7 @@ export class AppointmentsService {
     await this.assertBookableDate(dto.date, startTime);
 
     try {
-      await this.dataSource.transaction(async (manager) => {
+      await this.dataSource.transaction('READ COMMITTED', async (manager) => {
         // mismo orden de locks que una reserva nueva (profesional → turno),
         // para que una reserva y una reprogramación concurrentes no se
         // bloqueen mutuamente (deadlock)
@@ -687,6 +694,7 @@ export class AppointmentsService {
         if (!slot) {
           throw new ConflictException(SLOT_TAKEN_MESSAGE);
         }
+        await this.lockPatient(manager, current.patientId);
         await this.assertPatientFree(manager, current.patientId, slot, id);
 
         await manager.getRepository(AppointmentEntity).update(id, {
@@ -883,6 +891,20 @@ export class AppointmentsService {
    * mismo DNI (con profesionales distintos, que no comparten el lock del
    * profesional) se cuentan de a una.
    */
+  /**
+   * SELECT … FOR UPDATE de la fila del paciente: serializa las reservas y
+   * reprogramaciones de la MISMA persona aunque sean con médicos distintos
+   * (cada médico tiene su propio lock). Idempotente dentro de la transacción.
+   */
+  private async lockPatient(manager: EntityManager, patientId: number) {
+    await manager
+      .getRepository(PatientEntity)
+      .createQueryBuilder('patient')
+      .setLock('pessimistic_write')
+      .where('patient.id = :patientId', { patientId })
+      .getOne();
+  }
+
   private async assertPendingLimit(
     manager: EntityManager,
     patientId: number,
@@ -890,12 +912,7 @@ export class AppointmentsService {
     contactPhone: string | null,
   ) {
     if (max === 0) return;
-    await manager
-      .getRepository(PatientEntity)
-      .createQueryBuilder('patient')
-      .setLock('pessimistic_write')
-      .where('patient.id = :patientId', { patientId })
-      .getOne();
+    await this.lockPatient(manager, patientId);
     const pending = await manager
       .getRepository(AppointmentEntity)
       .createQueryBuilder('appointment')

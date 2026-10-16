@@ -7,6 +7,7 @@ import {
   LoggerService,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { localizeValidationMessages } from './validation-messages.util';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -23,15 +24,20 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : (clientError?.status ?? HttpStatus.INTERNAL_SERVER_ERROR);
 
-    const message =
+    const rawMessage =
       exception instanceof HttpException
         ? typeof exception.getResponse() === 'object'
           ? (exception.getResponse() as any).message
           : exception.getResponse()
         : (clientError?.message ?? 'Error interno');
+    // los 400 de validación salen en castellano (el log conserva el original)
+    const message =
+      status === HttpStatus.BAD_REQUEST
+        ? localizeValidationMessages(rawMessage)
+        : rawMessage;
 
     this.logger.error(
-      `HTTP ${status} Error en ${request.method} ${request.url}: ${JSON.stringify(message)}`,
+      `HTTP ${status} Error en ${request.method} ${request.url}: ${JSON.stringify(rawMessage)}`,
       exception instanceof Error ? exception.stack : '',
     );
 

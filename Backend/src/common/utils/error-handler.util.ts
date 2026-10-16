@@ -54,6 +54,15 @@ export function handleServiceError(
     ) {
       throw new ConflictException('El valor ya está en uso');
     }
+    // Deadlock (1213) o espera de lock agotada (1205): dos operaciones se
+    // pisaron y MySQL abortó una. No es un error del servidor: el cliente puede
+    // reintentar. Antes salía como 500.
+    const errno = (error as any).driverError?.errno;
+    if (errno === 1213 || errno === 1205) {
+      throw new ConflictException(
+        'El sistema estaba ocupado con otra operación al mismo tiempo. Probá de nuevo.',
+      );
+    }
   }
 
   // Cualquier otro error (SQL, TypeORM o desconocido) sale con el mensaje

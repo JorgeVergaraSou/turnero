@@ -1,12 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import { HealthInsurancesService } from './health-insurances.service';
 import {
   CreateHealthInsuranceDto,
@@ -39,7 +32,7 @@ export class AdminHealthInsurancesController {
   @Patch(':id')
   @RequirePermissions(Permission.HEALTH_INSURANCES_MANAGE)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: UpdateHealthInsuranceDto,
     @CurrentActor() actor: Actor,
   ) {

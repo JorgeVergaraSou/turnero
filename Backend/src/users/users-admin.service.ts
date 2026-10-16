@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
 import * as argon2 from 'argon2';
 import { UserEntity, passwordChangeTimestamp } from './entities/user.entity';
 import { UsersService } from './users.service';
@@ -39,9 +39,22 @@ export class UsersAdminService {
     private readonly professionalRepository: Repository<ProfessionalEntity>,
     private readonly usersService: UsersService,
     private readonly auditService: AuditService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async update(
+    id: number,
+    dto: AdminUpdateUserDto,
+    actor: Actor,
+  ): Promise<void> {
+    // cambiar un rol puede dejar al sistema sin admin: se serializa (ver withAdminLock)
+    if (dto.role !== undefined) {
+      return this.withAdminLock(() => this.updateUnlocked(id, dto, actor));
+    }
+    return this.updateUnlocked(id, dto, actor);
+  }
+
+  private async updateUnlocked(
     id: number,
     dto: AdminUpdateUserDto,
     actor: Actor,
@@ -154,6 +167,10 @@ export class UsersAdminService {
   }
 
   async deactivate(id: number, actor: Actor): Promise<void> {
+    return this.withAdminLock(() => this.deactivateUnlocked(id, actor));
+  }
+
+  private async deactivateUnlocked(id: number, actor: Actor): Promise<void> {
     try {
       if (id === actor.userId) {
         throw new BadRequestException('No podés darte de baja a vos mismo');
@@ -234,6 +251,36 @@ export class UsersAdminService {
   }
 
   /** Lanza si `id` es el único ADMIN activo. */
+  /**
+   * Una sola operación que pueda quitar un administrador por vez. La regla
+   * "nunca sin administradores" se revisa y DESPUÉS se actúa: dos admins que se
+   * daban de baja entre sí al mismo tiempo pasaban los dos la revisión y el
+   * sistema quedaba sin ninguno (solo recuperable tocando la base). Con este
+   * candado (de MySQL, vale entre todas las instancias de la API) la segunda
+   * operación espera a que termine la primera y ya ve el resultado.
+   */
+  private async withAdminLock<T>(action: () => Promise<T>): Promise<T> {
+    const runner = this.dataSource.createQueryRunner();
+    await runner.connect();
+    try {
+      const [row] = await runner.query(
+        "SELECT GET_LOCK('turnero_admin_changes', 10) AS acquired",
+      );
+      if (Number(row.acquired) !== 1) {
+        throw new ConflictException(
+          'Hay otro cambio de administradores en curso. Probá de nuevo en unos segundos.',
+        );
+      }
+      try {
+        return await action();
+      } finally {
+        await runner.query("SELECT RELEASE_LOCK('turnero_admin_changes')");
+      }
+    } finally {
+      await runner.release();
+    }
+  }
+
   private async assertNotLastAdmin(id: number) {
     const otherActiveAdmins = await this.userRepository.count({
       where: { role: Role.ADMIN, idUser: Not(id) },

@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   Post,
 } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import { IsIn, IsOptional } from 'class-validator';
 import { WhatsAppRemindersService } from './whatsapp-reminders.service';
 import type { WhatsAppOutcome } from './whatsapp-reminders.service';
@@ -43,7 +44,7 @@ export class WhatsAppRemindersController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(Permission.APPOINTMENTS_MANAGE)
   mark(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Param('stage', ParseIntPipe) stage: number,
     @Body() dto: MarkWhatsAppReminderDto,
     @CurrentActor() actor: Actor,

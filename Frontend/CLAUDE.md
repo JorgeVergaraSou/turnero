@@ -260,3 +260,9 @@ src/
 - `npm run lint` — ESLint 9, flat config (`eslint.config.js`). Limpio a la
   fecha de este archivo.
 - Sin tests unitarios de frontend (no hay Jest/Vitest instalado); los flujos se verificaron de punta a punta en el navegador contra una base de demo. La lógica crítica (disponibilidad, permisos, doble reserva, acceso clínico) está testeada en el backend.
+
+## Notas del QA (octubre 2026)
+
+- La pantalla de atencion medica **autoguarda** el borrador 30 s despues de la ultima edicion (`AUTOSAVE_MS`); un contador de ediciones evita marcar "guardado" si se siguio escribiendo durante el guardado.
+- Campos de paciente con `maxLength` (80/80/20/30/150) en reserva publica y alta de recepcion, igual que el backend.
+- `body { overflow-wrap: break-word }` en `index.css` evita que textos largos rompan el layout.

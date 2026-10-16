@@ -7,12 +7,12 @@ import {
   HttpStatus,
   MessageEvent,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Req,
   Sse,
 } from '@nestjs/common';
+import { ParseIdPipe } from '@/common/pipes/parse-id.pipe';
 import { Observable } from 'rxjs';
 import { DisplayDevicesService } from './display-devices.service';
 import { DisplayStreamService } from './display-stream.service';
@@ -52,7 +52,7 @@ export class AdminDisplayDevicesController {
   @Patch(':id')
   @RequirePermissions(Permission.DISPLAYS_MANAGE)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @Body() dto: UpdateDisplayDeviceDto,
     @CurrentActor() actor: Actor,
   ) {
@@ -63,7 +63,7 @@ export class AdminDisplayDevicesController {
   @Get(':id/token')
   @Header('Cache-Control', 'no-store')
   @RequirePermissions(Permission.DISPLAYS_MANAGE)
-  reveal(@Param('id', ParseIntPipe) id: number, @CurrentActor() actor: Actor) {
+  reveal(@Param('id', ParseIdPipe) id: number, @CurrentActor() actor: Actor) {
     return this.devices.reveal(id, actor);
   }
 
@@ -71,7 +71,7 @@ export class AdminDisplayDevicesController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(Permission.DISPLAYS_MANAGE)
   rotateToken(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: number,
     @CurrentActor() actor: Actor,
   ) {
     return this.devices.rotateToken(id, actor);

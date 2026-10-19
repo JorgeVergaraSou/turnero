@@ -18,7 +18,12 @@ import {
   unique,
   uniqueDni,
 } from './e2e-helpers';
-import { ClinicFixture, createClinic, patientData } from './e2e-fixtures';
+import {
+  ClinicFixture,
+  createClinic,
+  patientData,
+  publicPatientData,
+} from './e2e-fixtures';
 import { Role } from '../src/common/enums/role.enum';
 import { addDays, clinicNow } from '../src/common/utils/clinic-time.util';
 import { computeNoticeHash } from '../src/privacy/privacy-notice.util';
@@ -60,14 +65,21 @@ describe('Aviso de privacidad y consentimiento (e2e)', () => {
     specialtyId: clinic.specialtyId,
     date: tomorrow,
     startTime: nextSlot(),
-    patient: patientData(uniqueDni()),
+    patient: publicPatientData(uniqueDni()),
     ...overrides,
   });
 
-  const book = (body: unknown) =>
+  // en la reserva web el email es obligatorio: los tests que no hablan del
+  // email reciben uno por defecto (los de "sin email" usan `bookRaw`)
+  const withEmail = (body: any) =>
+    body?.patient && !body.patient.email
+      ? { ...body, patient: { ...body.patient, email: 'paciente@example.com' } }
+      : body;
+  const bookRaw = (body: unknown) =>
     request(server)
       .post(`${API}/public/appointments`)
       .send(body as object);
+  const book = (body: unknown) => bookRaw(withEmail(body));
 
   const publish = (body: Record<string, unknown>, token = admin.token) =>
     request(server)
@@ -132,7 +144,7 @@ describe('Aviso de privacidad y consentimiento (e2e)', () => {
       async (_c, value) => {
         const dni = uniqueDni();
         const before = { a: await appointments(), c: await consents() };
-        const body = bookingBody({ patient: patientData(dni) }) as Record<
+        const body = bookingBody({ patient: publicPatientData(dni) }) as Record<
           string,
           unknown
         >;
@@ -152,7 +164,10 @@ describe('Aviso de privacidad y consentimiento (e2e)', () => {
       const dni = uniqueDni();
       const started = Date.now();
       const res = await book(
-        bookingBody({ patient: patientData(dni), privacyVersion: version }),
+        bookingBody({
+          patient: publicPatientData(dni),
+          privacyVersion: version,
+        }),
       ).expect(201);
       expect(res.body.code).toBeDefined();
 
@@ -236,7 +251,7 @@ describe('Aviso de privacidad y consentimiento (e2e)', () => {
       await book(
         bookingBody({
           startTime,
-          patient: patientData(dni),
+          patient: publicPatientData(dni),
           privacyVersion: version,
         }),
       ).expect(409);
@@ -266,7 +281,7 @@ describe('Aviso de privacidad y consentimiento (e2e)', () => {
       const before = { a: await appointments(), c: await consents() };
       const stale = await book(
         bookingBody({
-          patient: patientData(dniOld),
+          patient: publicPatientData(dniOld),
           privacyVersion: oldVersion,
         }),
       ).expect(409);

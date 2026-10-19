@@ -10,7 +10,12 @@ import {
   uniqueDni,
   currentPrivacyVersion,
 } from './e2e-helpers';
-import { ClinicFixture, createClinic, patientData } from './e2e-fixtures';
+import {
+  ClinicFixture,
+  createClinic,
+  patientData,
+  publicPatientData,
+} from './e2e-fixtures';
 import { Role } from '../src/common/enums/role.enum';
 import { addDays, clinicNow } from '../src/common/utils/clinic-time.util';
 import * as argon2 from 'argon2';
@@ -234,7 +239,7 @@ describe('Administración: usuarios, auditoría y configuración (e2e)', () => {
             specialtyId: clinic.specialtyId,
             date: tomorrow,
             startTime: '07:00',
-            patient: patientData(uniqueDni()),
+            patient: publicPatientData(uniqueDni()),
           })
           .expect(403);
         expect(res.body.message).toMatch(/11 4000-0000/);
@@ -308,7 +313,7 @@ describe('Administración: usuarios, auditoría y configuración (e2e)', () => {
           specialtyId: clinic.specialtyId,
           date: tomorrow,
           startTime: '07:30',
-          patient: patientData(dni),
+          patient: publicPatientData(dni),
         })
         .expect(201);
 

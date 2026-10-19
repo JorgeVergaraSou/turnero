@@ -41,6 +41,7 @@ import {
 import { generateAppointmentCode } from './appointment-code.util';
 import {
   buildBookingWhatsAppMessage,
+  capitalizeName,
   toWhatsAppNumber,
   whatsAppUrl,
 } from './whatsapp.util';
@@ -166,11 +167,11 @@ export class AppointmentsService {
         `La reserva online está deshabilitada${settings.contactPhone ? `: pedí tu turno al ${settings.contactPhone}` : '. Comunicate con el consultorio'}`,
       );
     }
-    // el código del turno le llega por WhatsApp (al teléfono) o por mail: si el
-    // teléfono no sirve para WhatsApp, el email pasa a ser obligatorio
-    if (!toWhatsAppNumber(dto.patient.phone) && !dto.patient.email) {
+    // el código del turno le llega también por mail: en la reserva web el email
+    // es obligatorio (en recepción no, el paciente ya está en el consultorio)
+    if (!dto.patient.email?.trim()) {
       throw new BadRequestException(
-        'Tu teléfono no parece un celular con código de área (ej. 11 5555-0000). Corregilo o agregá un email para recibir los datos del turno.',
+        'Ingresá tu email: ahí te mandamos el comprobante del turno.',
       );
     }
     // sin aceptar la versión vigente del aviso de privacidad no hay reserva
@@ -281,7 +282,7 @@ export class AppointmentsService {
     return whatsAppUrl(
       number,
       buildBookingWhatsAppMessage({
-        firstName: appointment.contactFirstName,
+        firstName: capitalizeName(appointment.contactFirstName),
         clinicName,
         date: appointment.date,
         startTime: appointment.startTime,

@@ -69,15 +69,22 @@ describe('Seguridad de la reserva pública (e2e)', () => {
     specialtyId: clinic.specialtyId,
     date: tomorrow,
     startTime: '10:00',
-    patient: patientData(uniqueDni()),
+    patient: { ...patientData(uniqueDni()), email: 'paciente@example.com' },
     privacyVersion,
     ...overrides,
   });
 
-  const book = (body: unknown) =>
+  // en la reserva web el email es obligatorio: los tests que no hablan del
+  // email reciben uno por defecto (los de "sin email" usan `bookRaw`)
+  const withEmail = (body: any) =>
+    body?.patient && !body.patient.email
+      ? { ...body, patient: { ...body.patient, email: 'paciente@example.com' } }
+      : body;
+  const bookRaw = (body: unknown) =>
     request(server)
       .post(`${API}/public/appointments`)
       .send(body as object);
+  const book = (body: unknown) => bookRaw(withEmail(body));
 
   const appointmentsOf = async (documentNumber: string) =>
     Number(
@@ -465,6 +472,7 @@ describe('Seguridad de la reserva pública (e2e)', () => {
             lastName: 'GOMEZ',
             documentNumber: dni,
             phone: '+54 9 11 4444 2222',
+            email: 'ana@example.com',
             healthInsuranceId: null,
           },
         }),
@@ -894,16 +902,16 @@ describe('Seguridad de la reserva pública (e2e)', () => {
       expect(text).not.toContain(res.body.specialty);
     });
 
-    it('teléfono que no sirve para WhatsApp y sin email → 400, y no se crea nada', async () => {
-      const patient = { ...patientData(uniqueDni()), phone: '5555-0000' };
-      const res = await book(
+    it('sin email → 400, y no se crea nada (el comprobante también va por mail)', async () => {
+      const patient = patientData(uniqueDni());
+      const res = await bookRaw(
         validBody({ date: inThreeDays, startTime: '11:00', patient }),
       ).expect(400);
       expect(JSON.stringify(res.body)).toMatch(/email/i);
       expect(await appointmentsOf(patient.documentNumber)).toBe(0);
     });
 
-    it('teléfono fijo/sin código de área pero con email → se reserva, sin enlace de WhatsApp', async () => {
+    it('teléfono que no sirve para WhatsApp, con email → se reserva, sin enlace de WhatsApp', async () => {
       const patient = {
         ...patientData(uniqueDni()),
         phone: '5555-0000',

@@ -27,7 +27,7 @@ import {
 import { AppointmentTicket } from '@/components/AppointmentTicket';
 import { HealthInsuranceSelect } from '@/components/HealthInsuranceSelect';
 import { PrivacyNoticeBox } from '@/components/PrivacyNoticeBox';
-import { MEMBER_NUMBER_PATTERN, healthInsuranceWithNumber, isWhatsAppPhone } from '@/utilities';
+import { MEMBER_NUMBER_PATTERN, healthInsuranceWithNumber } from '@/utilities';
 import {
   addDays,
   clinicToday,
@@ -573,10 +573,8 @@ function validatePatient(p: PatientInput): PatientErrors {
     errors.documentNumber = 'Ingresá tu DNI (solo números, sin puntos).';
   if (!/^[0-9+()\s-]{6,30}$/.test(p.phone.trim()))
     errors.phone = 'Ingresá un teléfono de contacto.';
-  if (p.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim()))
-    errors.email = 'Revisá el email.';
-  else if (!p.email?.trim() && p.phone.trim() && !isWhatsAppPhone(p.phone))
-    errors.email = 'Tu teléfono no parece un celular con código de área (ej. 11 5555-0000). Corregilo o dejá un email para recibir los datos del turno.';
+  if (!p.email?.trim()) errors.email = 'Ingresá tu email: ahí te mandamos el comprobante.';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim())) errors.email = 'Revisá el email.';
   if (p.healthInsuranceId === undefined)
     errors.healthInsuranceId = 'Elegí tu obra social, o "Particular" si no tenés.';
   const memberNumber = p.healthInsuranceNumber?.trim();
@@ -599,7 +597,6 @@ function PatientStep({
   privacy: PrivacyState;
 }) {
   const [errors, setErrors] = useState<PatientErrors>({});
-  const emailRequired = !!value.phone.trim() && !isWhatsAppPhone(value.phone);
   const set = (field: keyof PatientInput) => (e: React.ChangeEvent<HTMLInputElement>) =>
     onChange({ ...value, [field]: e.target.value });
 
@@ -652,18 +649,14 @@ function PatientStep({
         />
       )}
       <TextInput
-        label={emailRequired ? 'Email' : 'Email (opcional)'}
+        label="Email"
         type="email"
         autoComplete="email"
         maxLength={150}
         value={value.email ?? ''}
         onChange={set('email')}
         error={errors.email}
-        hint={
-          emailRequired
-            ? 'Tu teléfono no sirve para WhatsApp: el comprobante te llega por email.'
-            : 'Si lo dejás, te mandamos el comprobante.'
-        }
+        hint="Te mandamos el comprobante con el código del turno."
       />
       <StickyAction>
         <Button type="submit" size="lg" className="w-full sm:w-auto">

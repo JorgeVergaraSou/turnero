@@ -78,3 +78,8 @@ export function patientData(documentNumber: string) {
     healthInsuranceId: null as number | null,
   };
 }
+
+/** Datos de paciente para la reserva WEB: ahí el email es obligatorio. */
+export function publicPatientData(documentNumber: string) {
+  return { ...patientData(documentNumber), email: 'paciente@example.com' };
+}

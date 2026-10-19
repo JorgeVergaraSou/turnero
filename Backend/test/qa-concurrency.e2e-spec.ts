@@ -17,7 +17,12 @@ import {
   unique,
   uniqueDni,
 } from './e2e-helpers';
-import { ClinicFixture, createClinic, patientData } from './e2e-fixtures';
+import {
+  ClinicFixture,
+  createClinic,
+  patientData,
+  publicPatientData,
+} from './e2e-fixtures';
 import { Role } from '../src/common/enums/role.enum';
 import { addDays, clinicNow } from '../src/common/utils/clinic-time.util';
 import { AppointmentEntity } from '../src/appointments/entities/appointment.entity';
@@ -84,7 +89,7 @@ describe('QA: concurrencia (e2e)', () => {
     specialtyId: clinic.specialtyId,
     date,
     startTime,
-    patient: patientData(dni),
+    patient: publicPatientData(dni),
     privacyVersion,
   });
   const bookPublic = (body: object) =>

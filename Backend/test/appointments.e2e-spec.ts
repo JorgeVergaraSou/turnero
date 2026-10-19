@@ -9,7 +9,12 @@ import {
   uniqueDni,
   currentPrivacyVersion,
 } from './e2e-helpers';
-import { ClinicFixture, createClinic, patientData } from './e2e-fixtures';
+import {
+  ClinicFixture,
+  createClinic,
+  patientData,
+  publicPatientData,
+} from './e2e-fixtures';
 import { Role } from '../src/common/enums/role.enum';
 import { addDays, clinicNow } from '../src/common/utils/clinic-time.util';
 
@@ -93,7 +98,7 @@ describe('Turnos (e2e)', () => {
           specialtyId: clinic.specialtyId,
           date: tomorrow,
           startTime: '08:00',
-          patient: patientData(dni),
+          patient: publicPatientData(dni),
         })
         .expect(201);
       expect(booked.body.code).toMatch(/^[0-9A-Z]{10}$/);
@@ -123,7 +128,7 @@ describe('Turnos (e2e)', () => {
           specialtyId: clinic.specialtyId,
           date: tomorrow,
           startTime: '08:30',
-          patient: patientData(dni),
+          patient: publicPatientData(dni),
         })
         .expect(201);
 

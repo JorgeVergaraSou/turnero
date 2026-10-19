@@ -99,6 +99,18 @@ export function buildWhatsAppMessage(input: WhatsAppMessageInput): string {
   return `Hola ${input.firstName}, te recordamos tu turno ${day} a las ${time} en ${where}.${confirm} Si no podés venir, avisanos así liberamos el horario.`;
 }
 
+/** «patricia» / «MARÍA josé» → «Patricia» / «María José» (para saludar en el mensaje). */
+export function capitalizeName(name: string): string {
+  return name
+    .trim()
+    .toLocaleLowerCase('es-AR')
+    .replace(
+      /(^|[\s'-])(\p{L})/gu,
+      (_, sep: string, letter: string) =>
+        sep + letter.toLocaleUpperCase('es-AR'),
+    );
+}
+
 export interface BookingWhatsAppInput {
   firstName: string;
   clinicName: string;

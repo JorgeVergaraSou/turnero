@@ -1,5 +1,6 @@
 import {
   buildBookingWhatsAppMessage,
+  capitalizeName,
   buildWhatsAppMessage,
   toWhatsAppNumber,
   whatsAppUrl,
@@ -122,5 +123,18 @@ describe('buildBookingWhatsAppMessage (código del turno recién reservado)', ()
     const text = buildBookingWhatsAppMessage({ ...base, manageUrl: null });
     expect(text).not.toContain('http');
     expect(text.endsWith('.')).toBe(true);
+  });
+});
+
+describe('capitalizeName', () => {
+  it.each([
+    ['patricia', 'Patricia'],
+    ['MARÍA josé', 'María José'],
+    ['  juan  ', 'Juan'],
+    ["o'brien", "O'Brien"],
+    ['ana-lía', 'Ana-Lía'],
+    ['ñandú', 'Ñandú'],
+  ])('%s → %s', (input, expected) => {
+    expect(capitalizeName(input)).toBe(expected);
   });
 });

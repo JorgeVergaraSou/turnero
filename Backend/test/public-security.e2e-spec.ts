@@ -878,4 +878,63 @@ describe('Seguridad de la reserva pública (e2e)', () => {
       },
     );
   });
+
+  describe('código del turno por WhatsApp', () => {
+    it('la reserva devuelve un enlace wa.me al teléfono del paciente con el código', async () => {
+      const res = await book(
+        validBody({ date: inThreeDays, startTime: '10:30' }),
+      ).expect(201);
+      expect(res.body.whatsappUrl).toMatch(
+        /^https:\/\/wa\.me\/5491155550000\?text=/,
+      );
+      const text = decodeURIComponent(res.body.whatsappUrl.split('text=')[1]);
+      expect(text).toContain(res.body.code.slice(0, 5));
+      expect(text).toContain(res.body.code.slice(5));
+      // los datos del enlace no incluyen nada clínico ni al profesional
+      expect(text).not.toContain(res.body.specialty);
+    });
+
+    it('teléfono que no sirve para WhatsApp y sin email → 400, y no se crea nada', async () => {
+      const patient = { ...patientData(uniqueDni()), phone: '5555-0000' };
+      const res = await book(
+        validBody({ date: inThreeDays, startTime: '11:00', patient }),
+      ).expect(400);
+      expect(JSON.stringify(res.body)).toMatch(/email/i);
+      expect(await appointmentsOf(patient.documentNumber)).toBe(0);
+    });
+
+    it('teléfono fijo/sin código de área pero con email → se reserva, sin enlace de WhatsApp', async () => {
+      const patient = {
+        ...patientData(uniqueDni()),
+        phone: '5555-0000',
+        email: 'paciente@example.com',
+      };
+      const res = await book(
+        validBody({ date: inThreeDays, startTime: '11:00', patient }),
+      ).expect(201);
+      expect(res.body.whatsappUrl).toBeNull();
+    });
+
+    it('recepción también recibe el enlace al dar un turno', async () => {
+      const patient = (
+        await request(server)
+          .post(`${API}/admin/patients`)
+          .set(auth(reception.token))
+          .send(patientData(uniqueDni()))
+          .expect(201)
+      ).body;
+      const res = await request(server)
+        .post(`${API}/admin/appointments`)
+        .set(auth(reception.token))
+        .send({
+          professionalId: clinic.professionalId,
+          specialtyId: clinic.specialtyId,
+          patientId: patient.id,
+          date: inThreeDays,
+          startTime: '11:30',
+        })
+        .expect(201);
+      expect(res.body.whatsappUrl).toMatch(/^https:\/\/wa\.me\/549/);
+    });
+  });
 });

@@ -98,3 +98,36 @@ export function buildWhatsAppMessage(input: WhatsAppMessageInput): string {
   }
   return `Hola ${input.firstName}, te recordamos tu turno ${day} a las ${time} en ${where}.${confirm} Si no podés venir, avisanos así liberamos el horario.`;
 }
+
+export interface BookingWhatsAppInput {
+  firstName: string;
+  clinicName: string;
+  /** 'YYYY-MM-DD' */
+  date: string;
+  /** 'HH:mm' o 'HH:mm:ss' */
+  startTime: string;
+  officeName: string;
+  officeAddress: string;
+  /** código tal cual se guarda (sin espacios) */
+  code: string;
+  /** enlace a «Mi turno» (null si no hay FRONTEND_URL) */
+  manageUrl: string | null;
+}
+
+/**
+ * Mensaje con el código del turno recién reservado. Mismo criterio que los
+ * avisos: día, hora y lugar, sin profesional ni especialidad. El código va en
+ * dos mitades (como en pantalla) para que sea fácil de leer y dictar.
+ */
+export function buildBookingWhatsAppMessage(
+  input: BookingWhatsAppInput,
+): string {
+  const [y, m, d] = input.date.split('-').map(Number);
+  const weekday = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  const day = `${weekday} ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
+  const code = `${input.code.slice(0, 5)} ${input.code.slice(5)}`;
+  const manage = input.manageUrl
+    ? ` Para consultarlo o cancelarlo (con tu DNI): ${input.manageUrl}`
+    : '';
+  return `Hola ${input.firstName}, tu turno en ${input.clinicName} quedó reservado: ${day} a las ${input.startTime.slice(0, 5)} en ${input.officeName} (${input.officeAddress}). Tu código de turno es ${code}.${manage}`;
+}

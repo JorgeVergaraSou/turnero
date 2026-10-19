@@ -9,6 +9,7 @@ import type {
   PatientInput,
   PrivacyNotice,
   PublicAppointment,
+  WithWhatsAppUrl,
   PublicProfessional,
   Slot,
   Specialty,
@@ -26,7 +27,7 @@ import {
 import { AppointmentTicket } from '@/components/AppointmentTicket';
 import { HealthInsuranceSelect } from '@/components/HealthInsuranceSelect';
 import { PrivacyNoticeBox } from '@/components/PrivacyNoticeBox';
-import { MEMBER_NUMBER_PATTERN, healthInsuranceWithNumber } from '@/utilities';
+import { MEMBER_NUMBER_PATTERN, healthInsuranceWithNumber, isWhatsAppPhone } from '@/utilities';
 import {
   addDays,
   clinicToday,
@@ -69,7 +70,7 @@ export function BookingPage() {
     phone: '',
     email: '',
   });
-  const [booked, setBooked] = useState<PublicAppointment | null>(null);
+  const [booked, setBooked] = useState<WithWhatsAppUrl<PublicAppointment> | null>(null);
   const { settings } = useClinicSettings();
   const insurances = useAsync(() => publicApi.healthInsurances(), []);
   const privacy = useAsync(() => publicApi.privacyNotice(), []);
@@ -574,6 +575,8 @@ function validatePatient(p: PatientInput): PatientErrors {
     errors.phone = 'Ingresá un teléfono de contacto.';
   if (p.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim()))
     errors.email = 'Revisá el email.';
+  else if (!p.email?.trim() && p.phone.trim() && !isWhatsAppPhone(p.phone))
+    errors.email = 'Tu teléfono no parece un celular con código de área (ej. 11 5555-0000). Corregilo o dejá un email para recibir los datos del turno.';
   if (p.healthInsuranceId === undefined)
     errors.healthInsuranceId = 'Elegí tu obra social, o "Particular" si no tenés.';
   const memberNumber = p.healthInsuranceNumber?.trim();
@@ -596,6 +599,7 @@ function PatientStep({
   privacy: PrivacyState;
 }) {
   const [errors, setErrors] = useState<PatientErrors>({});
+  const emailRequired = !!value.phone.trim() && !isWhatsAppPhone(value.phone);
   const set = (field: keyof PatientInput) => (e: React.ChangeEvent<HTMLInputElement>) =>
     onChange({ ...value, [field]: e.target.value });
 
@@ -648,14 +652,18 @@ function PatientStep({
         />
       )}
       <TextInput
-        label="Email (opcional)"
+        label={emailRequired ? 'Email' : 'Email (opcional)'}
         type="email"
         autoComplete="email"
         maxLength={150}
         value={value.email ?? ''}
         onChange={set('email')}
         error={errors.email}
-        hint="Si lo dejás, te mandamos el comprobante."
+        hint={
+          emailRequired
+            ? 'Tu teléfono no sirve para WhatsApp: el comprobante te llega por email.'
+            : 'Si lo dejás, te mandamos el comprobante.'
+        }
       />
       <StickyAction>
         <Button type="submit" size="lg" className="w-full sm:w-auto">
@@ -684,7 +692,7 @@ function ConfirmStep({
   insurances: HealthInsurance[];
   privacy: PrivacyState;
   onEdit: (step: Step) => void;
-  onBooked: (a: PublicAppointment) => void;
+  onBooked: (a: WithWhatsAppUrl<PublicAppointment>) => void;
   onSlotTaken: () => void;
 }) {
   const [sending, setSending] = useState(false);
@@ -819,7 +827,7 @@ function BookingDone({
   appointment,
   onRestart,
 }: {
-  appointment: PublicAppointment;
+  appointment: WithWhatsAppUrl<PublicAppointment>;
   onRestart: () => void;
 }) {
   return (
@@ -831,6 +839,19 @@ function BookingDone({
       <div className="mt-8">
         <AppointmentTicket appointment={appointment} animate />
       </div>
+      {appointment.whatsappUrl && (
+        <div className="mt-6 text-center">
+          <Button
+            size="lg"
+            onClick={() => window.open(appointment.whatsappUrl!, '_blank', 'noopener,noreferrer')}
+          >
+            Enviarme el código por WhatsApp
+          </Button>
+          <p className="mt-2 text-sm text-ink-soft">
+            Se abre tu WhatsApp con el mensaje ya escrito: solo tocá Enviar.
+          </p>
+        </div>
+      )}
       <div className="mt-8 flex flex-wrap justify-center gap-2">
         <Button variant="secondary" onClick={() => window.print()}>
           Imprimir

@@ -198,3 +198,7 @@ Los e2e (`test/*.e2e-spec.ts`, `npm run test:e2e`, siempre `--runInBand`) levant
 - **Cache**: middleware `no-store` en toda la API. **Salud**: `GET /api/health` (publico, `SELECT 1`; 200/503) para monitoreo.
 - **Env opcionales**: `JWT_EXPIRES_IN` (ej. `10h`, default 3h) y `TWO_FACTOR_KEY` (min 16 caracteres).
 - Tests QA: `qa-concurrency`, `qa-fuzz` (3730 pedidos hostiles), `qa-regressions`, `qa-timezone`, `qa-performance`, `qa-last-admin` (base propia `turnero_e2e_lastadmin`, descartable).
+
+## Código del turno por WhatsApp (octubre 2026)
+
+Al dar un turno (`POST /public/appointments` y `POST /admin/appointments`) la respuesta trae `whatsappUrl`: enlace `wa.me` al teléfono de contacto del turno con el mensaje y el código ya escritos (`buildBookingWhatsAppMessage`, `AppointmentsService.bookingWhatsAppUrl`). El sistema **no envía nada**: lo abre quien reservó (o recepción) y toca Enviar, igual que los avisos semiautomáticos. Es `null` si el teléfono no sirve para WhatsApp (`toWhatsAppNumber`); en la reserva pública, en ese caso el **email pasa a ser obligatorio** (400 si falta). Mismo criterio de privacidad que los avisos: el mensaje no lleva profesional ni especialidad. `Frontend/src/utilities/whatsapp.utility.ts` replica `toWhatsAppNumber` solo para validar el formulario: si se cambia una, cambiar la otra.

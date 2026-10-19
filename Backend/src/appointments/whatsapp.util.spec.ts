@@ -1,4 +1,5 @@
 import {
+  buildBookingWhatsAppMessage,
   buildWhatsAppMessage,
   toWhatsAppNumber,
   whatsAppUrl,
@@ -87,5 +88,39 @@ describe('buildWhatsAppMessage', () => {
     expect(Object.keys(base)).not.toEqual(
       expect.arrayContaining(['professionalName', 'specialtyName']),
     );
+  });
+});
+
+describe('buildBookingWhatsAppMessage (código del turno recién reservado)', () => {
+  const base = {
+    firstName: 'Jimena',
+    clinicName: 'Consultorio Central',
+    date: '2026-10-19',
+    startTime: '11:00:00',
+    officeName: 'Consultorio 3',
+    officeAddress: 'Av. Principal 123',
+    code: 'RWP695EJS0',
+    manageUrl: 'https://turnos.example.com/mi-turno',
+  };
+
+  it('lleva día, hora, lugar y el código en dos mitades', () => {
+    const text = buildBookingWhatsAppMessage(base);
+    expect(text).toContain('Hola Jimena');
+    expect(text).toContain('lunes 19/10 a las 11:00');
+    expect(text).toContain('Consultorio 3 (Av. Principal 123)');
+    expect(text).toContain('RWP69 5EJS0');
+    expect(text).toContain('https://turnos.example.com/mi-turno');
+  });
+
+  it('no dice con qué profesional ni especialidad es el turno', () => {
+    expect(buildBookingWhatsAppMessage(base)).not.toMatch(
+      /Dr|Dra|Sosa|Pediatr/,
+    );
+  });
+
+  it('sin FRONTEND_URL no deja un enlace roto', () => {
+    const text = buildBookingWhatsAppMessage({ ...base, manageUrl: null });
+    expect(text).not.toContain('http');
+    expect(text.endsWith('.')).toBe(true);
   });
 });

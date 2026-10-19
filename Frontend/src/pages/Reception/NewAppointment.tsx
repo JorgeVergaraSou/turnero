@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { publicApi, receptionApi } from '@/services';
 import { useAsync } from '@/hooks/useAsync';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import type { Appointment, Patient } from '@/interfaces';
+import type { Appointment, Patient, WithWhatsAppUrl } from '@/interfaces';
 import { StaffPaths } from '@/models';
 import {
   Button,
@@ -33,7 +33,7 @@ export function NewAppointmentPage() {
   const [startTime, setStartTime] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [booked, setBooked] = useState<Appointment | null>(null);
+  const [booked, setBooked] = useState<WithWhatsAppUrl<Appointment> | null>(null);
 
   const specialties = useAsync(() => publicApi.specialties(), []);
   const professionals = useAsync(
@@ -89,8 +89,20 @@ export function NewAppointmentPage() {
             {formatCode(booked.code)}
           </p>
         </Panel>
-        <div className="mt-5 flex gap-2">
-          <Button onClick={reset}>Dar otro turno</Button>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {booked.whatsappUrl ? (
+            <Button onClick={() => window.open(booked.whatsappUrl!, '_blank', 'noopener,noreferrer')}>
+              Enviar el código por WhatsApp
+            </Button>
+          ) : (
+            <p className="w-full text-sm text-ink-soft">
+              El teléfono de este paciente no sirve para WhatsApp (falta el código de área o no es un celular): dale
+              el código en persona o corregí el teléfono en su ficha.
+            </p>
+          )}
+          <Button variant={booked.whatsappUrl ? 'secondary' : 'primary'} onClick={reset}>
+            Dar otro turno
+          </Button>
           <Link
             to={StaffPaths.AGENDA}
             className="inline-flex h-10 items-center rounded-(--radius-control) border border-line bg-sheet px-4 font-medium hover:border-ink-soft"

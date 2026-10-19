@@ -40,6 +40,11 @@ import {
 } from './appointment.events';
 import { generateAppointmentCode } from './appointment-code.util';
 import {
+  buildBookingWhatsAppMessage,
+  toWhatsAppNumber,
+  whatsAppUrl,
+} from './whatsapp.util';
+import {
   parseConfirmToken,
   verifyConfirmToken,
 } from './appointment-confirm-token.util';
@@ -161,6 +166,13 @@ export class AppointmentsService {
         `La reserva online está deshabilitada${settings.contactPhone ? `: pedí tu turno al ${settings.contactPhone}` : '. Comunicate con el consultorio'}`,
       );
     }
+    // el código del turno le llega por WhatsApp (al teléfono) o por mail: si el
+    // teléfono no sirve para WhatsApp, el email pasa a ser obligatorio
+    if (!toWhatsAppNumber(dto.patient.phone) && !dto.patient.email) {
+      throw new BadRequestException(
+        'Tu teléfono no parece un celular con código de área (ej. 11 5555-0000). Corregilo o agregá un email para recibir los datos del turno.',
+      );
+    }
     // sin aceptar la versión vigente del aviso de privacidad no hay reserva
     // (se verifica ANTES de tocar nada: ni turno ni paciente)
     const notice = await this.privacyService.assertCurrentVersion(
@@ -212,14 +224,17 @@ export class AppointmentsService {
     if (existingPatient) {
       this.notifyPatientIfContactDiffers(appointment);
     }
-    return toPublicAppointmentView(appointment);
+    return {
+      ...toPublicAppointmentView(appointment),
+      whatsappUrl: await this.bookingWhatsAppUrl(appointment),
+    };
   }
 
   /** Reserva desde recepción, para un paciente existente. */
   async createByReception(
     dto: CreateAdminAppointmentDto,
     actor: Actor,
-  ): Promise<AppointmentView> {
+  ): Promise<AppointmentView & { whatsappUrl: string | null }> {
     const appointment = await this.book({
       professionalId: dto.professionalId,
       specialtyId: dto.specialtyId,
@@ -245,7 +260,37 @@ export class AppointmentsService {
       contactHealthInsuranceId: (patient) => patient.healthInsuranceId,
       contactHealthInsuranceNumber: (patient) => patient.healthInsuranceNumber,
     });
-    return toAppointmentView(appointment);
+    return {
+      ...toAppointmentView(appointment),
+      whatsappUrl: await this.bookingWhatsAppUrl(appointment),
+    };
+  }
+
+  /**
+   * Enlace wa.me al teléfono de contacto del turno con el código ya escrito;
+   * null si el teléfono no sirve para WhatsApp. No manda nada: lo abre quien
+   * reservó (o recepción) y lo envía desde su propio WhatsApp.
+   */
+  private async bookingWhatsAppUrl(
+    appointment: AppointmentEntity,
+  ): Promise<string | null> {
+    const number = toWhatsAppNumber(appointment.contactPhone);
+    if (!number) return null;
+    const { clinicName } = await this.settingsService.get();
+    const base = process.env.FRONTEND_URL?.replace(/\/+$/, '');
+    return whatsAppUrl(
+      number,
+      buildBookingWhatsAppMessage({
+        firstName: appointment.contactFirstName,
+        clinicName,
+        date: appointment.date,
+        startTime: appointment.startTime,
+        officeName: appointment.office.name,
+        officeAddress: appointment.office.address,
+        code: appointment.code,
+        manageUrl: base ? `${base}/mi-turno` : null,
+      }),
+    );
   }
 
   /**

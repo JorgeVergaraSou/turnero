@@ -36,6 +36,7 @@ import {
   PatientInput,
   Professional,
   PublicAppointment,
+  WithWhatsAppUrl,
   PublicProfessional,
   Schedule,
   ScheduleException,
@@ -72,7 +73,7 @@ export const publicApi = {
     patient: PatientInput;
     /** versión del aviso de privacidad que la persona aceptó (obligatoria) */
     privacyVersion: number;
-  }) => data<PublicAppointment>(api.post('/public/appointments', body)),
+  }) => data<WithWhatsAppUrl<PublicAppointment>>(api.post('/public/appointments', body)),
   privacyNotice: () => data<PrivacyNotice>(api.get('/public/privacy-notice')),
   lookup: (code: string, documentNumber: string) =>
     data<PublicAppointment>(api.post('/public/appointments/lookup', { code, documentNumber })),
@@ -184,7 +185,7 @@ export const receptionApi = {
     patientId: number;
     date: string;
     startTime: string;
-  }) => data<Appointment>(api.post('/admin/appointments', body)),
+  }) => data<WithWhatsAppUrl<Appointment>>(api.post('/admin/appointments', body)),
   confirm: (id: number) => data<Appointment>(api.post(`/admin/appointments/${id}/confirm`)),
   cancel: (id: number, reason: string) =>
     data<Appointment>(api.post(`/admin/appointments/${id}/cancel`, { reason })),

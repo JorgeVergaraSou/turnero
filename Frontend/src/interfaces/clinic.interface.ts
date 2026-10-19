@@ -237,6 +237,9 @@ export interface PublicAppointment {
   };
 }
 
+/** Respuesta de dar un turno: trae además el enlace de WhatsApp con el código (null si el teléfono no sirve). */
+export type WithWhatsAppUrl<T> = T & { whatsappUrl: string | null };
+
 // ---------------- clínico ----------------
 
 export type DiagnosisType = 'PRINCIPAL' | 'SECUNDARIO';

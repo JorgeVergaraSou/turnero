@@ -8,3 +8,4 @@ export * from './errors/getErrorMessage.utility';
 export * from './dates.utility';
 export * from './clinic.utility';
 export * from './clipboard.utility';
+export * from './whatsapp.utility';

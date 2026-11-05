@@ -10,7 +10,7 @@ import { SessionSync } from './components/SessionSync'
 import { Spinner } from './components/ui'
 import RoutesWithNotFound from './utilities/RoutesWithNotFound.utility'
 import { NoIndex, NoIndexLayout } from './components/NoIndex'
-import { PrivateTitle, PublicMeta, StaticTitleCleanup } from './components/Seo'
+import { PrivateTitle, PublicMeta, StaticHeadCleanup } from './components/Seo'
 import PublicLayout from './layouts/PublicLayout'
 import BookingPage from './pages/Public/Booking/Booking'
 import MyAppointmentPage from './pages/Public/MyAppointment/MyAppointment'
@@ -54,7 +54,7 @@ function App() {
     <Provider store={store}>
       <BrowserRouter>
         <SessionSync />
-        <StaticTitleCleanup />
+        <StaticHeadCleanup />
         <Suspense fallback={<div className="px-6"><Spinner /></div>}>
           <RoutesWithNotFound>
 

@@ -45,11 +45,24 @@ function contentSecurityPolicy(apiBaseUrl: string): Plugin {
   };
 }
 
+/**
+ * Reemplaza %SITE_URL% en index.html por VITE_SITE_URL (sin barra final), o por el marcador
+ * https://DOMINIO-A-DEFINIR mientras no esté definida (el reemplazo propio de Vite deja el texto
+ * "%VITE_SITE_URL%" cuando la variable falta o está vacía). Mismo marcador que src/components/Seo.tsx.
+ */
+function siteUrl(value: string | undefined): Plugin {
+  const url = (value || 'https://DOMINIO-A-DEFINIR').replace(/\/+$/, '');
+  return {
+    name: 'site-url',
+    transformIndexHtml: (html) => html.replaceAll('%SITE_URL%', url),
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   return {
-    plugins: [react(), tailwindcss(), contentSecurityPolicy(env.VITE_API_BASE_URL)],
+    plugins: [react(), tailwindcss(), contentSecurityPolicy(env.VITE_API_BASE_URL), siteUrl(env.VITE_SITE_URL)],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, './src'),

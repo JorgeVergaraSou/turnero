@@ -47,12 +47,14 @@ const publicPages: Record<PublicPage, { path: string; title: (clinic: string) =>
 };
 
 /**
- * Quita el <title> estático de index.html: React agrega el de cada pantalla al <head> y, si el
- * estático siguiera ahí, habría dos títulos (HTML inválido y ambiguo para los buscadores).
+ * Quita del <head> todo lo estático de index.html (título, description, Open Graph y Twitter Card,
+ * marcado con data-static): sirve a quienes no ejecutan JavaScript, pero React agrega el de cada
+ * pantalla y, si el estático siguiera ahí, habría duplicados (ambiguo para los buscadores). En las
+ * pantallas privadas no queda ninguno de los dos: no se comparten ni se indexan.
  */
-export function StaticTitleCleanup() {
+export function StaticHeadCleanup() {
   useEffect(() => {
-    document.querySelector('title[data-static]')?.remove();
+    document.head.querySelectorAll('[data-static]').forEach((element) => element.remove());
   }, []);
   return null;
 }

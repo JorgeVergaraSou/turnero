@@ -5,8 +5,27 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#17304F" />
-    <!-- Respaldo para quien no ejecuta JavaScript. Al arrancar, la app lo quita (StaticTitleCleanup) y pone el de cada pantalla. -->
+    <!--
+      Respaldo para quien NO ejecuta JavaScript (WhatsApp, Facebook y otros bots de vista previa, algunos
+      buscadores): texto genérico, sin el nombre del consultorio (que es dinámico) y sin datos sensibles.
+      Todo lo marcado data-static lo quita la app al arrancar (StaticHeadCleanup) y cada pantalla pone el suyo,
+      así que con JavaScript queda UNA sola etiqueta de cada tipo. %SITE_URL% lo reemplaza vite.config.ts.
+    -->
     <title data-static>Consultorio — Turnos</title>
+    <meta data-static name="description" content="Reservá tu turno médico online, sin crear una cuenta. Elegí especialidad, profesional, día y horario, y recibí tu código de turno al instante." />
+    <meta data-static property="og:type" content="website" />
+    <meta data-static property="og:site_name" content="Turnos online" />
+    <meta data-static property="og:locale" content="es_AR" />
+    <meta data-static property="og:title" content="Pedí tu turno online" />
+    <meta data-static property="og:description" content="Reservá tu turno médico online, sin crear una cuenta. Elegí especialidad, profesional, día y horario, y recibí tu código de turno al instante." />
+    <meta data-static property="og:url" content="%SITE_URL%/" />
+    <meta data-static property="og:image" content="%SITE_URL%/og-image.png" />
+    <meta data-static property="og:image:width" content="1200" />
+    <meta data-static property="og:image:height" content="630" />
+    <meta data-static name="twitter:card" content="summary_large_image" />
+    <meta data-static name="twitter:title" content="Pedí tu turno online" />
+    <meta data-static name="twitter:description" content="Reservá tu turno médico online, sin crear una cuenta. Elegí especialidad, profesional, día y horario, y recibí tu código de turno al instante." />
+    <meta data-static name="twitter:image" content="%SITE_URL%/og-image.png" />
   </head>
   <body>
     <div id="root"></div>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PENDIENTE: reemplazar DOMINIO-A-DEFINIR por el dominio real antes de publicar. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://DOMINIO-A-DEFINIR/</loc>
+  </url>
+  <url>
+    <loc>https://DOMINIO-A-DEFINIR/mi-turno</loc>
+  </url>
+  <url>
+    <loc>https://DOMINIO-A-DEFINIR/privacidad</loc>
+  </url>
+</urlset>

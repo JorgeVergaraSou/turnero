@@ -1,0 +1,19 @@
+# robots.txt del turnero.
+# Se puede indexar solo lo público (reserva, Mi turno y Privacidad). Todo lo demás es
+# privado o de un solo uso. Estas pantallas además llevan <meta name="robots" content="noindex">.
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /reset-password
+Disallow: /confirmar
+Disallow: /pantalla
+Disallow: /private
+Disallow: /admin
+Disallow: /recepcion
+Disallow: /medico
+Disallow: /perfil
+Disallow: /nuevo-usuario
+Disallow: /logout
+
+# PENDIENTE: reemplazar DOMINIO-A-DEFINIR por el dominio real antes de publicar.
+Sitemap: https://DOMINIO-A-DEFINIR/sitemap.xml

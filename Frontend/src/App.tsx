@@ -9,6 +9,7 @@ import { LogoutRoute } from './components/Logout/LogoutRoute'
 import { SessionSync } from './components/SessionSync'
 import { Spinner } from './components/ui'
 import RoutesWithNotFound from './utilities/RoutesWithNotFound.utility'
+import { NoIndex, NoIndexLayout } from './components/NoIndex'
 import PublicLayout from './layouts/PublicLayout'
 import BookingPage from './pages/Public/Booking/Booking'
 import MyAppointmentPage from './pages/Public/MyAppointment/MyAppointment'
@@ -59,9 +60,13 @@ function App() {
             <Route element={<PublicLayout />}>
               <Route index element={<BookingPage />} />
               <Route path={PublicRoutes.MY_APPOINTMENT} element={<MyAppointmentPage />} />
-              <Route path={PublicRoutes.CONFIRM} element={<ConfirmPage />} />
+              {/* enlace de un solo uso: no se indexa */}
+              <Route path={PublicRoutes.CONFIRM} element={<><NoIndex /><ConfirmPage /></>} />
               <Route path={PublicRoutes.PRIVACY} element={<PrivacyPage />} />
             </Route>
+
+            {/* Todo lo que sigue es privado o de un solo uso: lleva noindex (ver components/NoIndex.tsx) */}
+            <Route element={<NoIndexLayout />}>
 
             {/* TV de la sala de espera: sin layout ni sesión, usa token de pantalla */}
             <Route path={PublicRoutes.DISPLAY} element={<DisplayPage />} />
@@ -111,6 +116,7 @@ function App() {
               </Route>
 
               <Route path={PrivateRoutes.LOGOUT} element={<LogoutRoute />} />
+            </Route>
             </Route>
           </RoutesWithNotFound>
         </Suspense>

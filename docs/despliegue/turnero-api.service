@@ -1,0 +1,46 @@
+# Turnero: servicio de la API (backend). Instalar como: /etc/systemd/system/turnero-api.service
+# Supone la app en /opt/turnero y el usuario/grupo "turnero" (ver la guía, pasos 3 a 5).
+# Si las rutas son otras, cambiar WorkingDirectory y ReadWritePaths. Node: "which node" (suele ser /usr/bin/node).
+
+[Unit]
+Description=Turnero - API (NestJS)
+Documentation=file:///opt/turnero/docs/GUIA-DE-DESPLIEGUE.md
+After=network-online.target mysql.service
+Wants=network-online.target
+# Si falla 5 veces seguidas en 2 minutos (por ejemplo, un error en el .env), systemd deja de reintentar:
+# se ve con "systemctl status turnero-api" y "journalctl -u turnero-api".
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=turnero
+Group=turnero
+# La app lee su .env, y guarda uploads/ y logs/, relativos a esta carpeta
+WorkingDirectory=/opt/turnero/Backend
+ExecStart=/usr/bin/node dist/main
+
+# Si se cae o la mata el sistema, vuelve a arrancar a los 5 segundos
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+# Los mensajes de la app van al diario del sistema (journalctl) y, además, a Backend/logs (60 días)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=turnero-api
+
+# Endurecimiento: la app solo puede escribir donde necesita
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/turnero/Backend/uploads /opt/turnero/Backend/logs
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

@@ -10,6 +10,9 @@
 !Frontend/CLAUDE.md
 !GUIA-PANTALLA-SALA.md
 !Backend/ops/backup/RESPALDOS.md
+# Guías de despliegue y de operación (docs/): también se versionan, para que no vivan solo en una computadora
+!/docs/*.md
+!/docs/**/*.md
 
 # Dependencias y compilados
 node_modules/

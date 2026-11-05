@@ -10,6 +10,7 @@ import { SessionSync } from './components/SessionSync'
 import { Spinner } from './components/ui'
 import RoutesWithNotFound from './utilities/RoutesWithNotFound.utility'
 import { NoIndex, NoIndexLayout } from './components/NoIndex'
+import { PrivateTitle, PublicMeta, StaticTitleCleanup } from './components/Seo'
 import PublicLayout from './layouts/PublicLayout'
 import BookingPage from './pages/Public/Booking/Booking'
 import MyAppointmentPage from './pages/Public/MyAppointment/MyAppointment'
@@ -53,16 +54,17 @@ function App() {
     <Provider store={store}>
       <BrowserRouter>
         <SessionSync />
+        <StaticTitleCleanup />
         <Suspense fallback={<div className="px-6"><Spinner /></div>}>
           <RoutesWithNotFound>
 
             {/* Paciente, sin cuenta */}
             <Route element={<PublicLayout />}>
-              <Route index element={<BookingPage />} />
-              <Route path={PublicRoutes.MY_APPOINTMENT} element={<MyAppointmentPage />} />
+              <Route index element={<><PublicMeta page="booking" /><BookingPage /></>} />
+              <Route path={PublicRoutes.MY_APPOINTMENT} element={<><PublicMeta page="myAppointment" /><MyAppointmentPage /></>} />
               {/* enlace de un solo uso: no se indexa */}
-              <Route path={PublicRoutes.CONFIRM} element={<><NoIndex /><ConfirmPage /></>} />
-              <Route path={PublicRoutes.PRIVACY} element={<PrivacyPage />} />
+              <Route path={PublicRoutes.CONFIRM} element={<><NoIndex /><PrivateTitle /><ConfirmPage /></>} />
+              <Route path={PublicRoutes.PRIVACY} element={<><PublicMeta page="privacy" /><PrivacyPage /></>} />
             </Route>
 
             {/* Todo lo que sigue es privado o de un solo uso: lleva noindex (ver components/NoIndex.tsx) */}

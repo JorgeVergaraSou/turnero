@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { PrivateTitle } from './Seo';
 
 /**
  * Pide a los buscadores que no indexen ni sigan los enlaces de esta pantalla
@@ -18,6 +19,7 @@ export function NoIndexLayout() {
   return (
     <>
       <NoIndex />
+      <PrivateTitle />
       <Outlet />
     </>
   );

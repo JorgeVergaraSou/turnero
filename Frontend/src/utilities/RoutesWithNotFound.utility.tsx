@@ -9,6 +9,7 @@ function RoutesWithNotFound({ children }: NotFoundProps) {
             {children}
             <Route path="*" element={
                 <div className="grid min-h-dvh place-items-center px-4">
+                    <title>Página no encontrada</title>
                     <div className="max-w-sm text-center">
                         <h1 className="text-2xl font-bold">Esta página no existe</h1>
                         <p className="mt-2 text-ink-soft">Revisá la dirección o volvé al inicio.</p>

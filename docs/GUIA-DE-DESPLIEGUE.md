@@ -128,7 +128,7 @@ Debian no trae MySQL (trae MariaDB) y Ubuntu trae la 8.0: hace falta el reposito
 
 Dejá MySQL escuchando solo en el propio servidor: en `/etc/mysql/mysql.conf.d/mysqld.cnf` (o `/etc/mysql/conf.d/`) tiene que figurar `bind-address = 127.0.0.1`, y agregá `sql_mode = STRICT_TRANS_TABLES`. Luego `sudo systemctl restart mysql`.
 
-**2.5 Firewall** (esto importa: la API **escucha en todas las interfaces** y MySQL también podría; solo deben ser públicos SSH, 80 y 443)
+**2.5 Firewall** (solo deben ser públicos SSH, 80 y 443. La API ya se limita sola a escuchar en el propio servidor con `HOST=127.0.0.1` (paso 5), pero el firewall es una **segunda barrera independiente**: cubre MySQL y cualquier error de configuración)
 
 ```bash
 sudo ufw allow OpenSSH
@@ -190,6 +190,7 @@ Completá el archivo siguiendo los comentarios que trae. Lo esencial:
 | `DB_PASSWORD` | La clave de `turnero_app` del paso 4 |
 | `SECRET_WORD` | Una clave nueva: `openssl rand -hex 32` |
 | `TWO_FACTOR_KEY` | **Otra** clave nueva: `openssl rand -hex 32` (distinta de la anterior) |
+| `HOST` | `127.0.0.1` (ya viene así): la API escucha **solo en el propio servidor** y nginx le habla ahí. Escribí la dirección numérica (no `localhost`, que puede resolverse a otra) y no borres la línea: sin ella la API escucharía en todas las interfaces |
 | `FRONTEND_URL` | `https://<TU_DOMINIO>` (con https, sin barra al final) |
 | `TRUST_PROXY` | `1` (ya viene así) |
 | `JWT_EXPIRES_IN` | `10h` para cubrir una jornada (por defecto serían 3 h) |
@@ -201,6 +202,7 @@ Completá el archivo siguiendo los comentarios que trae. Lo esencial:
 ```bash
 grep -n '<' /opt/turnero/Backend/.env       # no tiene que mostrar NADA
 stat -c '%U:%G %a' /opt/turnero/Backend/.env     # turnero:turnero 640
+grep -n '^HOST=' /opt/turnero/Backend/.env       # HOST=127.0.0.1
 ```
 
 > **Muy importante:** `SECRET_WORD` y `TWO_FACTOR_KEY` no se pueden cambiar después sin consecuencias (sesiones cerradas, verificación en dos pasos y tokens de las pantallas ilegibles). Los respaldos guardan este archivo cifrado justamente por eso.
@@ -252,6 +254,7 @@ Comprobación (esperá unos 10 segundos):
 ```bash
 systemctl is-active turnero-api                  # active
 curl -s http://127.0.0.1:3006/api/health         # {"status":"ok"}
+sudo ss -tlnp | grep 3006                        # tiene que decir 127.0.0.1:3006 (NO 0.0.0.0:3006 ni *:3006)
 ```
 
 **Logs.** Dos lugares: `journalctl -u turnero-api -n 100 --no-pager` (y `-f` para verlos en vivo) y los archivos de `/opt/turnero/Backend/logs` (con rotación diaria, 60 días).
@@ -358,6 +361,8 @@ Si `nginx -t` marca un error, **no recargues**: el mensaje dice archivo y línea
 
 > **Si se agrega una pantalla nueva** en `Frontend/src/App.tsx`, hay que agregar su ruta a la lista de `nginx-turnero.conf`; si no, esa pantalla daría 404.
 >
+> **API y nginx se hablan por `127.0.0.1:3006`**: coincide con `HOST=127.0.0.1` y `PORT=3006` del `.env`. Si cambiás el puerto, cambialo también en las líneas `proxy_pass` de `nginx-turnero.conf`.
+>
 > **HSTS:** el navegador recuerda "este sitio es solo HTTPS" durante un año. Mientras probás, cambiá `max-age=31536000` por `max-age=300` (5 minutos) y subilo cuando todo ande.
 
 **10.4 Comprobación**
@@ -441,7 +446,7 @@ Después de desplegar, comprobá **todo** esto. Si algo falla, pasá a la secci�
 | 2 | HTTP pasa a HTTPS | `curl -I http://<TU_DOMINIO>` | `301` con `location: https://…` |
 | 3 | Renovación del certificado | `sudo certbot renew --dry-run` | `all simulated renewals succeeded` |
 | 4 | API viva | `curl -s https://<TU_DOMINIO>/api/health` | `{"status":"ok"}` |
-| 5 | La API **no** se ve desde afuera | Desde **otra** máquina: `curl -m 5 http://<IP_DEL_SERVIDOR>:3006/api/health` | No responde |
+| 5 | La API **no** se ve desde afuera | En el servidor: `sudo ss -tlnp \| grep 3006`. Desde **otra** máquina: `curl -m 5 http://<IP_DEL_SERVIDOR>:3006/api/health` | Escucha en `127.0.0.1:3006` (no en `0.0.0.0` ni `*`); desde afuera no responde (conexión rechazada o sin respuesta) |
 | 6 | MySQL **no** se ve desde afuera | Desde otra máquina: `nc -zv -w 5 <IP_DEL_SERVIDOR> 3306` | Falla / no conecta |
 | 7 | Una sola cabecera de seguridad | `curl -sI https://<TU_DOMINIO>/api/health \| grep -ci strict-transport` | `1` |
 | 8 | 404 real | `curl -I https://<TU_DOMINIO>/esta-no-existe` y `curl -I https://<TU_DOMINIO>/mi-turno` | `404` y `200` |
@@ -518,7 +523,7 @@ Si la versión nueva trae rutas nuevas en `Frontend/src/App.tsx`, actualizá tam
 |---|---|
 | `nginx -t` marca error | Dice archivo y línea. Lo más común: `DOMINIO-A-DEFINIR` sin reemplazar, certificado todavía inexistente (hacer primero la etapa A), o falta `/etc/nginx/snippets/turnero-proxy.conf` |
 | certbot no emite el certificado | El DNS tiene que apuntar a esta IP y el puerto 80 estar abierto (`sudo ufw status`). Probar `curl -i http://<TU_DOMINIO>/.well-known/acme-challenge/prueba` (da 404, pero tiene que llegar a nginx) |
-| `502 Bad Gateway` en `/api` | La API no está corriendo: `systemctl status turnero-api` y `journalctl -u turnero-api -n 100` |
+| `502 Bad Gateway` en `/api` | La API no está corriendo (`systemctl status turnero-api`, `journalctl -u turnero-api -n 100`), o `HOST`/`PORT` del `.env` no coinciden con el `proxy_pass http://127.0.0.1:3006` de nginx (`sudo ss -tlnp \| grep 3006` tiene que mostrar `127.0.0.1:3006`) |
 | El servicio no arranca (`systemctl status turnero-api`) | `journalctl -u turnero-api`: falta una variable del `.env`, la clave de `turnero_app` no coincide, MySQL caído, o no existen `uploads` y `logs` (paso 6) |
 | `Config validation error` | Falta una variable obligatoria en el `.env` (`DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`, `SECRET_WORD` con 16 caracteres o más) |
 | `Access denied for user 'turnero_app'` | La clave del `.env` no es la del paso 4, o falta el `GRANT` |
@@ -536,13 +541,14 @@ Si la versión nueva trae rutas nuevas en `Frontend/src/App.tsx`, actualizá tam
 **Probado de punta a punta** (en la computadora de desarrollo, Windows):
 - `npm run migration:run:prod` sobre una base vacía: 23 migraciones, 26 tablas y 24 triggers.
 - Arranque con `node dist/main`, creación del primer administrador con `SEED_ADMIN_*` y login.
+- Arranque **sin** `HOST` (escucha en todas las interfaces y responde también por la IP de red) y **con** `HOST=127.0.0.1` (escucha solo en `127.0.0.1` y por la IP de red da conexión rechazada).
 - Arranque de la API con **solo las dependencias de producción** (`npm ci --omit=dev`) y `migration:show` con ellas.
 - Compilación de la web con las variables de esta guía (política CSP con tu dominio, `og:url`, `robots.txt` y `sitemap.xml` dentro de `dist`).
 
 **Escrito según la documentación, pero no ejecutado** (no hay nginx, systemd ni certbot en la máquina de desarrollo): `nginx-turnero.conf` y sus archivos auxiliares, `turnero-api.service`, certbot, `ufw` y la instalación de MySQL 8.4. Por eso **cada paso termina con una comprobación** y conviene correr `sudo nginx -t` y `sudo systemd-analyze verify` antes de recargar. Los temporizadores de respaldos tienen el mismo aviso en `RESPALDOS.md`, sección 8.
 
 **Avisos de seguridad**
-- **La API escucha en todas las interfaces** (`0.0.0.0:3006`), no solo en `127.0.0.1`, y no hay variable para cambiarlo. Por eso el **firewall del paso 2.5 es obligatorio** y la checklist (punto 5) lo comprueba. Lo ideal es que la API escuche solo en `127.0.0.1`: queda anotado como mejora pendiente del código (hoy `main.ts` no permite elegir la interfaz).
+- **La API escucha solo en el propio servidor** cuando el `.env` tiene `HOST=127.0.0.1` (así viene en el ejemplo de producción). Sin esa variable escucha en **todas** las interfaces, como en desarrollo: por eso el `.env` de producción tiene que llevarla (paso 5, comprobación 5 de la checklist). El **firewall del paso 2.5 se mantiene** como segunda barrera: la API queda protegida por dos mecanismos independientes.
 - No abrir los puertos 3006 ni 3306.
 - Las claves del `.env` no se cambian a la ligera (ver paso 5).
 - Una sola copia de la API (ver paso 7).
@@ -565,6 +571,7 @@ Si la versión nueva trae rutas nuevas en `Frontend/src/App.tsx`, actualizá tam
 | `SECRET_WORD` | **sí** | Firma las sesiones, mínimo 16 caracteres |
 | `TWO_FACTOR_KEY` | recomendada | Cifra los secretos de 2FA y los tokens de pantalla (mínimo 16); si falta se deriva de `SECRET_WORD` |
 | `JWT_EXPIRES_IN` | no | Duración de la sesión: `90m`, `10h`, `1d` (por defecto `3h`) |
+| `HOST` | **sí, en producción** | `127.0.0.1`: interfaz en la que escucha la API. Vacío o sin definir = todas las interfaces (solo para desarrollo) |
 | `PORT` | no | `3006` |
 | `FRONTEND_URL` | recomendada | `https://<TU_DOMINIO>` sin barra final: links de correos y avisos, y origen CORS |
 | `CORS_ORIGIN` | no | Vacío (web y API en el mismo dominio) |

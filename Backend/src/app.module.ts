@@ -70,6 +70,8 @@ import * as Joi from 'joi';
           .pattern(/^\d{1,3}[mhd]$/)
           .allow('')
           .optional(),
+        // interfaz en la que escucha la API (ej. 127.0.0.1); vacío = todas
+        HOST: Joi.string().allow('').optional(),
         PORT: Joi.number().default(3006),
         SEED_ADMIN_NICK: Joi.string().allow('').optional(),
         SEED_ADMIN_EMAIL: Joi.string().allow('').optional(),

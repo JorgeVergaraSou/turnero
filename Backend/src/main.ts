@@ -74,7 +74,16 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
   });
 
-  await app.listen(process.env.PORT || 3006);
+  // Dirección en la que escucha la API. Sin HOST escucha en todas las interfaces (como siempre: cómodo en
+  // desarrollo). En producción, detrás de nginx, HOST=127.0.0.1 evita que se pueda llegar a la API desde
+  // la red sin pasar por el proxy (que es el que pone HTTPS y los límites de pedido).
+  const port = process.env.PORT || 3006;
+  const host = process.env.HOST?.trim();
+  if (host) {
+    await app.listen(port, host);
+  } else {
+    await app.listen(port);
+  }
 }
 bootstrap();
 

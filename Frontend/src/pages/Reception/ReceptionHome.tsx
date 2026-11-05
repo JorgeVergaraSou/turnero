@@ -293,7 +293,7 @@ function AppointmentList({
     <ul className="divide-y divide-line-soft">
       {appointments.map((a) => (
         <li key={a.id} className="flex flex-wrap items-center gap-x-4 gap-y-1.5 py-2.5">
-          <span className="w-12 font-mono font-semibold tabular">{shortTime(a.startTime)}</span>
+          <span className="min-w-[5.5ch] shrink-0 font-mono font-semibold whitespace-nowrap tabular">{shortTime(a.startTime)}</span>
           <span className="min-w-0 flex-1">
             <span className="font-medium">
               {a.patient.lastName}, {a.patient.firstName}

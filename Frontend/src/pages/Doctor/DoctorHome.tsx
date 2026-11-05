@@ -216,7 +216,7 @@ function UpcomingAppointments({
                   <ul className="px-4 pb-3">
                     {list.map((a) => (
                       <li key={a.id} className="flex items-baseline gap-3 py-0.5">
-                        <span className="w-11 shrink-0 font-mono text-sm font-semibold tabular">
+                        <span className="min-w-[5.5ch] shrink-0 font-mono text-sm font-semibold whitespace-nowrap tabular">
                           {shortTime(a.startTime)}
                         </span>
                         <Link
@@ -300,7 +300,7 @@ function AppointmentRow({
   const done = ['CANCELADO', 'AUSENTE'].includes(a.status);
   return (
     <li className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5 ${done ? 'text-ink-faint' : ''}`}>
-      <span className="w-14 font-mono text-lg font-semibold tabular">{shortTime(a.startTime)}</span>
+      <span className="min-w-[5.5ch] shrink-0 font-mono text-lg font-semibold whitespace-nowrap tabular">{shortTime(a.startTime)}</span>
       <span className="min-w-0 flex-1">
         <Link to={StaffPaths.doctorPatient(a.patient.id)} className="font-medium hover:underline">
           {a.patient.lastName}, {a.patient.firstName}

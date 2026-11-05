@@ -46,7 +46,7 @@ export function PrivacyNoticeBox({ notice }: { notice: PrivacyNotice }) {
             >
               Leer la política de privacidad completa
             </Link>
-            {notice.draft && <span className="ml-2 text-sm text-ink-faint">(texto en revisión)</span>}
+            {notice.draft && <span className="ml-2 text-sm text-ink-muted">(texto en revisión)</span>}
           </p>
         </div>
       </details>

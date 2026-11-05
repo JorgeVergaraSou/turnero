@@ -12,6 +12,9 @@
   --color-ink: #17304f;
   --color-ink-soft: #4a5d77;
   --color-ink-faint: #7d8a9b;
+  /* texto secundario PEQUEÑO legible: 5,3:1 sobre paper y 5,7:1 sobre blanco (AA exige 4,5:1).
+     ink-faint (3,3:1) queda para estados apagados, iconos y adornos, no para texto que hay que leer */
+  --color-ink-muted: #5b6778;
   --color-paper: #f5f7f6;
   --color-sheet: #ffffff;
   --color-line: #cfd8d4;

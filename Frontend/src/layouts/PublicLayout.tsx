@@ -29,14 +29,14 @@ export function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className="mx-auto max-w-2xl px-4 pb-8 text-sm text-ink-faint sm:px-6">
-        <NavLink to={`/${PublicRoutes.PRIVACY}`} className="hover:text-ink-soft">
+      <footer className="mx-auto max-w-2xl px-4 pb-8 text-sm text-ink-muted sm:px-6">
+        <NavLink to={`/${PublicRoutes.PRIVACY}`} className="hover:text-ink">
           Política de privacidad
         </NavLink>
         <span aria-hidden className="mx-2">
           ·
         </span>
-        <NavLink to={`/${PublicRoutes.LOGIN}`} className="hover:text-ink-soft">
+        <NavLink to={`/${PublicRoutes.LOGIN}`} className="hover:text-ink">
           Acceso del personal
         </NavLink>
       </footer>
